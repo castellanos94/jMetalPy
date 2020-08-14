@@ -47,13 +47,17 @@ class Interval:
         return Interval(min(a, b, c, d), max(a, b, c, d))
 
     def __rmul__(self, other):
-        return self.__mul__(other)
+        return Interval(other) * self
 
     def __truediv__(self, other):
         if isinstance(other, (float, int)):
             if math.isnan(other):
-                return Interval(0)
+                return Interval(math.nan)
             return self * (1 / Interval(other))
+        if other.lower == 0 and other.upper > 0:
+            return Interval(1 / other.upper, math.inf)
+        if other.lower < other.upper == 0:
+            return Interval(-math.inf, 1 / other.lower)
         return self * Interval(1 / other.lower, 1 / other.upper)
 
     def __rtruediv__(self, other):
@@ -186,22 +190,4 @@ class Interval:
         return Interval(0, abs(u))
 
     def __str__(self):
-
         return '{:.2f} {:.2f}'.format(self.lower, self.upper)
-
-
-if __name__ == '__main__':
-    a = Interval(-0.5, 5.5)
-    b = Interval(-10, 2)
-    c = Interval(-1, 1)
-    print(abs(a))
-    print(abs(b))
-    print(abs(c))
-    print(pow(b, 2))
-    print('call np')
-    d = c * anp.ones(2)
-    print(d.astype('str'))
-    e = 2 / d
-
-    print(e.astype('str'))
-    print(a <= c)
