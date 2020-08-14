@@ -244,8 +244,8 @@ class NSGAIII(NSGAII):
                  population_generator: Generator = store.default_generator,
                  population_evaluator: Evaluator = store.default_evaluator,
                  dominance_comparator: Comparator = store.default_comparator):
-        self.reference_directions = reference_directions.compute()
-
+        # self.reference_directions = reference_directions.compute()
+        self.reference_directions = reference_directions
         if not population_size:
             population_size = len(self.reference_directions)
         if self.reference_directions.shape[1] != problem.number_of_objectives:

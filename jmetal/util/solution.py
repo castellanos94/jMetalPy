@@ -107,6 +107,7 @@ def print_solution_to_file(solutions, filename: str):
     if isinstance(solutions[0], BinarySolution):
         binary = True
     with open(filename, 'w') as of:
+        of.write('variables, objectives, constraints\n')
         for solution in solutions:
             vars_str = ''
             if binary:

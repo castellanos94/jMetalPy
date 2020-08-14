@@ -50,16 +50,17 @@ class PortfolioSocialProblem(BinaryProblem):
 
 
 if __name__ == '__main__':
+    random.seed(1)
     path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/psp/o4p25_0.txt'
     pspInstance = PspInstance()
     pspInstance.read_(path)
-    max_evaluations = 20000
+    max_evaluations = 100
     binary_string_length = pspInstance.n_var
     problem = PortfolioSocialProblem(pspInstance)
 
     algorithm = NSGAII(
         problem=problem,
-        population_size=100,
+        population_size=3,
         offspring_population_size=1,
         mutation=BitFlipMutation(probability=1.0 / binary_string_length),
         crossover=SPXCrossover(probability=1.0),

@@ -1,6 +1,7 @@
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII, UniformReferenceDirectionFactory
 from jmetal.operator import SBXCrossover, PolynomialMutation
 from jmetal.problem import DTLZ2
+from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.solution import read_solutions, print_function_values_to_file, print_variables_to_file
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
@@ -18,6 +19,8 @@ if __name__ == '__main__':
         crossover=SBXCrossover(probability=1.0, distribution_index=30),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
+    progress_bar = ProgressBarObserver(max=max_evaluations)
+    algorithm.observable.register(progress_bar)
 
     algorithm.run()
     front = algorithm.get_result()

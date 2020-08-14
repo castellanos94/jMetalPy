@@ -191,3 +191,6 @@ class Interval:
 
     def __str__(self):
         return '{:.2f} {:.2f}'.format(self.lower, self.upper)
+
+    def __repr__(self):
+        return '{:.2f} {:.2f}'.format(self.lower, self.upper)
