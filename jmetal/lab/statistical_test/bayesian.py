@@ -49,7 +49,7 @@ def bayesian_sign_test(data, rope_limits=[-0.01, 0.01], prior_strength=0.5, prio
     Nequiv = n - Nright - Nleft
 
     # compute the the probabilities that the mean difference of accuracy is in
-    # the interval (−Inf, left), [left, right], or (ringth, Inf).
+    # the custom (−Inf, left), [left, right], or (ringth, Inf).
 
     # Parameters of the Dirichlet distribution
     alpha = np.array([Nleft, Nequiv, Nright], dtype=float) + 1e-6
@@ -116,7 +116,7 @@ def bayesian_signed_rank_test(data, rope_limits=[-0.01, 0.01], prior_strength=1.
     Z = np.concatenate(([Z0], Z), axis=None)
 
     # compute the the probabilities that the mean difference of accuracy is in
-    # the interval (−Inf, left), [left, right], or (ringth, Inf).
+    # the custom (−Inf, left), [left, right], or (ringth, Inf).
 
     Dprocess = np.zeros((sample_size, 3))
     for mc in range(sample_size):

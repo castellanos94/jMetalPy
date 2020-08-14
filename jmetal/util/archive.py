@@ -67,7 +67,7 @@ class BoundedArchive(Archive[S]):
     def __find_worst_solution(self, solution_list: List[S]) -> S:
         if solution_list is None:
             raise Exception("The solution list is None")
-        elif len(solution_list) is 0:
+        elif len(solution_list) == 0:
             raise Exception("The solution list is empty")
 
         worst_solution = solution_list[0]

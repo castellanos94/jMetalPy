@@ -52,12 +52,12 @@ class CrowdingDistance(DensityEstimator[List[S]]):
         """
         size = len(front)
 
-        if size is 0:
+        if size == 0:
             return
-        elif size is 1:
+        elif size == 1:
             front[0].attributes['crowding_distance'] = float("inf")
             return
-        elif size is 2:
+        elif size == 2:
             front[0].attributes['crowding_distance'] = float("inf")
             front[1].attributes['crowding_distance'] = float("inf")
             return

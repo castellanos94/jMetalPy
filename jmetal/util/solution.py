@@ -3,11 +3,10 @@ import os
 from pathlib import Path
 from typing import List
 
-from jmetal.core.solution import FloatSolution, Solution
+from jmetal.core.solution import FloatSolution, Solution, BinarySolution
 from jmetal.util.archive import NonDominatedSolutionsArchive, Archive
 
 LOGGER = logging.getLogger('jmetal')
-
 
 """
 .. module:: solutions
@@ -91,6 +90,33 @@ def print_function_values_to_file(solutions, filename: str):
             for function_value in solution.objectives:
                 of.write(str(function_value) + ' ')
             of.write('\n')
+
+
+def print_solution_to_file(solutions, filename: str):
+    filename = filename + '.csv'
+    LOGGER.info('Output file (function values): ' + filename)
+
+    try:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+    except FileNotFoundError:
+        pass
+
+    if type(solutions) is not list:
+        solutions = [solutions]
+    binary = False
+    if isinstance(solutions[0], BinarySolution):
+        binary = True
+    with open(filename, 'w') as of:
+        for solution in solutions:
+            vars_str = ''
+            if binary:
+                for v in solution.variables[0]:
+                    vars_str += '1' if v else '0'
+            else:
+                vars_str = str(solution.variables).replace('[', '').replace(']', '')
+            of.write(vars_str + ' * ')
+            of.write(str(solution.objectives).replace('[', '').replace(']', '') + ' * ')
+            of.write(str(solution.constraints).replace('[', '').replace(']', '') + '\n')
 
 
 def print_function_values_to_screen(solutions):
