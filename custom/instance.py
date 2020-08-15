@@ -9,6 +9,7 @@ class Instance(ABC):
         self.n_var = 0
         self.n_obj = 0
         self.n_constraints = 1
+        self.initial_solutions = []
 
     @abstractmethod
     def read_(self, absolute_path: str):
@@ -95,8 +96,8 @@ class DTLZInstance(Instance):
         index += 1
         self.n_constraints = 0
         self.dms = int(content[index].split()[0])
-        self.upper_bound = [0 for i in range(self.n_var)]
-        self.lower_bound = [0 for i in range(self.n_var)]
+        self.upper_bound = self.n_var * [0.0]
+        self.lower_bound = self.n_var * [1.0]
         for dm in range(self.dms):
             index += 1
             line_split = content[index].split()
@@ -151,7 +152,7 @@ class DTLZInstance(Instance):
                 idx = 0
                 solution = FloatSolution(lower_bound=self.lower_bound, upper_bound=self.upper_bound,
                                          number_of_objectives=self.n_obj)
-                solution.variables = [float(line_split[i].replace(',','')) for i in range(0, self.n_var)]
+                solution.variables = [float(line_split[i].replace(',', '')) for i in range(0, self.n_var)]
                 self.initial_solutions.append(solution)
 
 
@@ -192,9 +193,3 @@ class PspIntervalInstance(PspInstance):
             index += 1
             a = [float(v) for v in content[index].split()]
             self.projects.append(a)
-
-
-if __name__ == '__main__':
-    instance = DTLZInstance()
-    path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/dtlz/DTLZInstance.txt'
-    instance.read_(path)

@@ -1,13 +1,13 @@
 import random
 
 from custom.instance import PspInstance
+from custom.utils import print_solutions_to_file
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.core.problem import BinaryProblem
 from jmetal.core.solution import BinarySolution
 from jmetal.operator import BitFlipMutation, SPXCrossover
 from jmetal.util.comparator import DominanceComparator
 from jmetal.util.observer import ProgressBarObserver
-from jmetal.util.solution import print_solution_to_file
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         s.objectives = [-1 * obj for obj in s.objectives]
     # Save results to file
     # print_function_values_to_file(front, 'FUN.' + algorithm.get_name() + "-" + problem.get_name())
-    print_solution_to_file(front, 'SOLUTIONS.' + algorithm.get_name() + "-" + problem.get_name())
+    print_solutions_to_file(front, 'SOLUTIONS.' + algorithm.get_name() + "-" + problem.get_name())
 
     print('Algorithm (continuous problem): ' + algorithm.get_name())
     print('Problem: ' + problem.get_name())

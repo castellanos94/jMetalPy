@@ -1,9 +1,8 @@
 import random
 from math import pi, cos
 
-import numpy as np
-
 from custom.instance import DTLZInstance
+from custom.utils import ReferenceDirectionFromSolution, print_solutions_to_file, DIRECTORY_RESULTS
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
@@ -11,7 +10,6 @@ from jmetal.lab.visualization import Plot
 from jmetal.operator import SBXCrossover, PolynomialMutation
 from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.ranking import FastNonDominatedRanking
-from jmetal.util.solution import print_solution_to_file
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 
@@ -64,12 +62,7 @@ if __name__ == '__main__':
     path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/dtlz/DTLZInstance.txt'
     instance.read_(path)
     problem = DTLZ1Preferences(instance)
-    ref_dir = []
-    for s in instance.initial_solutions:
-        problem.evaluate(s)
-        ref_dir.append(np.array(s.objectives))
-    ref_dir = np.array(ref_dir)
-    print(len(instance.initial_solutions))
+
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
     max_evaluations = 25000
@@ -77,7 +70,7 @@ if __name__ == '__main__':
     algorithm = NSGAIII(
         problem=problem,
         population_size=100,
-        reference_directions=ref_dir,
+        reference_directions=ReferenceDirectionFromSolution(problem, problem.instance),
         mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
         crossover=SBXCrossover(probability=1.0, distribution_index=30),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -87,7 +80,7 @@ if __name__ == '__main__':
         algorithm = NSGAIII(
             problem=problem,
             population_size=92,
-            reference_directions=ref_dir,
+            reference_directions=ReferenceDirectionFromSolution(problem, problem.instance),
             mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
             crossover=SBXCrossover(probability=1.0, distribution_index=30),
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -98,18 +91,18 @@ if __name__ == '__main__':
 
         bag = bag + algorithm.get_result()
     print(len(bag))
-
+    print_solutions_to_file(bag, 'Solutions.bag.' + algorithm.label)
     ranking = FastNonDominatedRanking()
-    print_solution_to_file(bag, 'Solutions.bag.' + algorithm.label)
 
     ranking.compute_ranking(bag)
     front = ranking.get_subfront(0)
     print(len(front))
     # Save results to file
-    print_solution_to_file(front, 'Solutions.front0.' + algorithm.label)
+    print_solutions_to_file(front, DIRECTORY_RESULTS + 'front0.' + algorithm.label)
 
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${problem.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename='NSGAII-ZDT1-p_f0', format='png')
+    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename=DIRECTORY_RESULTS + 'NSGAII-ZDT1-p_f0',
+                    format='png')
