@@ -115,3 +115,5 @@ dask-worker-space
 # R
 .RData
 .Rhistory
+# Result from experiments
+results/
