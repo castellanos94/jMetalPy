@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
         bag = bag + algorithm.get_result()
     print(len(bag))
-    print_solutions_to_file(bag, 'Solutions.bag.' + algorithm.label)
+    print_solutions_to_file(bag, DIRECTORY_RESULTS + 'Solutions.bag.' + algorithm.label)
     ranking = FastNonDominatedRanking()
 
     ranking.compute_ranking(bag)

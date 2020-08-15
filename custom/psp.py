@@ -1,6 +1,7 @@
 import random
 
 from custom.instance import PspInstance
+from custom.interval import Interval
 from custom.utils import print_solutions_to_file
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.core.problem import BinaryProblem
@@ -47,6 +48,48 @@ class PortfolioSocialProblem(BinaryProblem):
 
     def get_name(self) -> str:
         return 'PortfolioSocialProblem'
+
+
+class MyProblem(BinaryProblem):
+
+    def __init__(self, ):
+        super(MyProblem, self).__init__()
+        self.number_of_bits = 5
+        self.number_of_variables = 1
+        self.number_of_objectives = 4
+        self.number_of_constraints = 1
+        self.budget = Interval(80000)
+        self.projects = [[9695, 1, 1, 7960, 880, 240, 415],
+                         [8635, 2, 1, 8860, 2425, 420, 385],
+                         [6140, 3, 1, 3990, 4900, 115, 470],
+                         [9430, 1, 2, 4070, 4675, 415, 270],
+                         [6310, 1, 2, 6000, 4150, 435, 490]]
+
+    def create_solution(self) -> BinarySolution:
+        new_solution = BinarySolution(number_of_variables=self.number_of_variables,
+                                      number_of_objectives=self.number_of_objectives)
+
+        new_solution.variables[0] = \
+            [True if random.randint(0, 1) == 0 else False for _ in range(
+                self.number_of_bits)]
+
+        return new_solution
+
+    def evaluate(self, solution: BinarySolution) -> BinarySolution:
+        budget = Interval(0)
+        objectives = self.number_of_objectives * [Interval(1)]
+
+        for index, bits in enumerate(solution.variables[0]):
+            if bits:
+                budget += self.projects[index][0]
+                for obj in range(0, self.number_of_objectives):
+                    objectives[obj] += self.projects[index][obj + 3]
+        solution.objectives = [Interval(-1) * obj for obj in objectives]
+
+        return solution
+
+    def get_name(self) -> str:
+        return 'DummyProblemInterval'
 
 
 if __name__ == '__main__':

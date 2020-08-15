@@ -9,7 +9,11 @@ import numpy as anp
 class Interval:
 
     def __init__(self, lower, upper=None):
-        self.lower = lower
+        if isinstance(lower, Interval):
+            self.lower = lower.lower
+            self.upper = lower.upper
+        else:
+            self.lower = lower
         if upper is None:
             self.upper = lower
         else:
@@ -91,7 +95,7 @@ class Interval:
 
     def __lt__(self, other):
         if isinstance(other, (float, int)):
-            return self.lower < other
+            return self.upper < other
         return self.upper < other.lower or self.possibility(other) < 0.5
 
     def __gt__(self, other):
