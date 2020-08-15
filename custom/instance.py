@@ -25,10 +25,10 @@ class PspInstance(Instance):
         self.budget = 0
         self.weights = []
         self.projects = []
-        self.umbral_indiferencia = []
-        self.umbral_veto = []
+        self.indifference_threshold = []
+        self.veto_threshold = []
         self.areas = []
-        self.regiones = []
+        self.regions = []
 
     def read_(self, absolute_path: str):
         with open(absolute_path) as f:
@@ -44,10 +44,10 @@ class PspInstance(Instance):
             self.weights.append(float(v))
         index += 1
         for v in content[index].split():
-            self.umbral_indiferencia.append(float(v))
+            self.indifference_threshold.append(float(v))
         index += 1
         for v in content[index].split():
-            self.umbral_veto.append(float(v))
+            self.veto_threshold.append(float(v))
         index += 1
         n_a = int(content[index])
         for i in range(0, n_a):
@@ -59,7 +59,7 @@ class PspInstance(Instance):
         for i in range(0, n_r):
             index += 1
             a = [float(v) for v in content[index].split()]
-            self.regiones.append(a)
+            self.regions.append(a)
         index += 1
         self.n_var = int(content[index])
         for i in range(0, self.n_var):
@@ -138,7 +138,7 @@ class DTLZInstance(Instance):
                 line_split = content[index].split()
                 solution = FloatSolution(lower_bound=self.lower_bound, upper_bound=self.upper_bound,
                                          number_of_objectives=self.n_obj)
-                solution.variables = [float(line_split[i].replace(',')) for i in range(0, self.n_var)]
+                solution.variables = [float(line_split[i].replace(',', '')) for i in range(0, self.n_var)]
                 self.best_compromise.append(solution)
         index += 1
         if content[index].split()[0] == 'TRUE':
@@ -149,7 +149,6 @@ class DTLZInstance(Instance):
             for i in range(n):
                 index += 1
                 line_split = content[index].split()
-                idx = 0
                 solution = FloatSolution(lower_bound=self.lower_bound, upper_bound=self.upper_bound,
                                          number_of_objectives=self.n_obj)
                 solution.variables = [float(line_split[i].replace(',', '')) for i in range(0, self.n_var)]
@@ -171,10 +170,10 @@ class PspIntervalInstance(PspInstance):
             self.weights.append(float(v))
         index += 1
         for v in content[index].split():
-            self.umbral_indiferencia.append(float(v))
+            self.indifference_threshold.append(float(v))
         index += 1
         for v in content[index].split():
-            self.umbral_veto.append(float(v))
+            self.veto_threshold.append(float(v))
         index += 1
         n_a = int(content[index])
         for i in range(0, n_a):
@@ -186,7 +185,7 @@ class PspIntervalInstance(PspInstance):
         for i in range(0, n_r):
             index += 1
             a = [float(v) for v in content[index].split()]
-            self.regiones.append(a)
+            self.regions.append(a)
         index += 1
         self.n_var = int(content[index])
         for i in range(0, self.n_var):
