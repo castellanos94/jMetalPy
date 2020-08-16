@@ -3,10 +3,9 @@ import os
 
 import numpy as np
 
-from custom.instance import Instance
+from custom.gd_problems import GDProblem
 from custom.interval import Interval
 from jmetal.algorithm.multiobjective.nsgaiii import ReferenceDirectionFactory
-from jmetal.core.problem import Problem
 from jmetal.core.solution import BinarySolution, Solution
 from jmetal.util.comparator import DominanceComparator, Comparator, OverallConstraintViolationComparator
 
@@ -43,10 +42,10 @@ def print_solutions_to_file(solutions, filename: str):
 
 
 class ReferenceDirectionFromSolution(ReferenceDirectionFactory):
-    def __init__(self, problem: Problem, instance: Instance, normalize: bool = False):
+    def __init__(self, problem: GDProblem, normalize: bool = False):
         super(ReferenceDirectionFromSolution, self).__init__(n_dim=problem.number_of_objectives)
         self.problem = problem
-        self.instance = instance
+        self.instance = problem.instance_
         self.normalize = normalize
 
     def _compute(self):
@@ -54,9 +53,12 @@ class ReferenceDirectionFromSolution(ReferenceDirectionFactory):
         for s in self.instance.initial_solutions:
             self.problem.evaluate(s)
             ref_dir.append(np.array(s.objectives))
+        print(ref_dir)
         if self.normalize:
-            raise Exception('Not implemented yet.')
-        # TODO: aqui hago algo
+            min_f, max_f = np.min(ref_dir), np.max(ref_dir)
+            norm = max_f - min_f
+            ref_dir = (ref_dir - min_f) / norm
+
         return np.array(ref_dir)
 
 

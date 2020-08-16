@@ -59,7 +59,7 @@ def dtlz1_test():
     algorithm = NSGAIII(
         problem=problem,
         population_size=100,
-        reference_directions=ReferenceDirectionFromSolution(problem, problem.instance_),
+        reference_directions=ReferenceDirectionFromSolution(problem),
         mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
         crossover=SBXCrossover(probability=1.0, distribution_index=30),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -69,7 +69,7 @@ def dtlz1_test():
         algorithm = NSGAIII(
             problem=problem,
             population_size=92,
-            reference_directions=ReferenceDirectionFromSolution(problem, problem.instance_),
+            reference_directions=ReferenceDirectionFromSolution(problem),
             mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
             crossover=SBXCrossover(probability=1.0, distribution_index=30),
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
