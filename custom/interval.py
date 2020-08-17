@@ -133,6 +133,17 @@ class Interval:
             return 0
         return (self.upper - other.lower) / ((self.upper - self.lower) + (other.upper - other.lower))
 
+    def poss_greater_than_or_eq(self, other):
+        poss = self.possibility(other)
+        if poss <= 0:
+            return 0
+        if poss >= 1:
+            return 1
+        return poss
+
+    def poss_smaller_than_or_eq(self, other):
+        return 1 - self.poss_greater_than_or_eq(other)
+
     def __isub__(self, other):
         return self - other
 

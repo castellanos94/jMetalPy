@@ -113,4 +113,4 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
 
 if __name__ == '__main__':
     random.seed(8435)
-    dm_generator(10, 7, 10 * [Interval(0, 0.5)])
+    dm_generator(4, 7, 4 * [Interval(0, 0.5)])

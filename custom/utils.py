@@ -99,6 +99,19 @@ class ITHDMDominanceComparator(DominanceComparator):
         return 0
 
 
+class OutrankingModel:
+    def __init__(self, weights: List[Interval], veto: List[Interval], alpha, beta, lambda_, chi,
+                 supports_utility_function: bool = False):
+        self.weights = weights
+        self.veto = veto
+        self.alpha = alpha
+        self.beta = beta
+        self.lambda_ = lambda_
+        self.chi = chi
+        self.supports_utility_function = supports_utility_function
+        self.dominance_comparator = ITHDMDominanceComparator()
+
+
 class DMGenerator:
     def __init__(self, number_of_variables: int, number_of_objectives: int, max_objectives: List[Interval]):
         self.numberOfObjectives = number_of_objectives
@@ -150,10 +163,10 @@ class DMGenerator:
         vector = [0] * (self.numberOfObjectives + 1)
         same = True
         while same:
-            vector = [random.randint(0, 1000) / 1000.0 for _ in vector]
+            vector = [random.randint(1, 10000) / 10000.0 for _ in vector]
             for idx in range(self.numberOfObjectives):
                 while vector[idx] <= 0 or vector[idx] >= 1.0:
-                    vector[idx] = random.randint(0, 1000) / 1000.0
+                    vector[idx] = random.randint(1, 10000) / 10000.0
             vector[self.numberOfObjectives] = 1
             same = False
             for idx in range(self.numberOfObjectives + 1):
@@ -165,3 +178,122 @@ class DMGenerator:
                     if vector[jdx] == vector[jdx + 1]:
                         same = True
         return vector[0:self.numberOfObjectives]
+
+
+class ITHDMPreferences:
+    """
+    This class determines what kind of outranking relationship exists between two
+    solutions: x, y. Fernández,J.R.FigueiraandJ.Navarro,Interval-based extensions
+    of two outranking methods for multi-criteria ordinal classification, Omega,
+    https://doi.org/10.1016/j.omega.2019.05.001
+    """
+
+    def __init__(self, problem: GDProblem, preference_model: OutrankingModel):
+        self.problem = problem
+        self.preference_model = preference_model
+        self.sigmaXY = None
+        self.sigmaYX = None
+        self.coalition = [None for _ in range(self.problem.number_of_objectives)]
+
+    """
+        Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
+    """
+
+    def compare(self, x: Solution, y: Solution) -> int:
+        self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
+        self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
+        if self.preference_model.dominance_comparator.compare(x, y) == -1:
+            return -2
+        if self.sigmaXY >= self.preference_model.beta > self.sigmaYX:
+            return -1
+        if self.sigmaXY >= self.preference_model.beta and self.sigmaYX >= self.preference_model.beta:
+            return 0
+        if self.sigmaXY < self.preference_model.beta and self.sigmaYX < 0:
+            return 1
+        return 2
+
+    def _credibility_index(self, x: List, y: List) -> float:
+        omegas = []
+        dj = []
+        eta_gamma = [0] * self.problem.number_of_objectives
+        max_eta_gamma = float('-inf')
+        for idx in range(self.problem.number_of_objectives):
+            omegas.append(self._alpha_ij(x, y, idx))
+            dj.append(self._discordance_ij(x, y, idx))
+        for idx in range(self.problem.number_of_objectives):
+            gamma = omegas[idx]
+            ci = self._concordance_index(gamma, omegas)
+            poss = ci.poss_greater_than_or_eq(self.preference_model.lambda_)
+            max_discordance = float('-inf')
+            for jdx in range(self.problem.number_of_objectives):
+                if self.coalition[jdx] == 0 and dj[jdx] > max_discordance:
+                    max_discordance = dj[jdx]
+            non_discordance = 1 - max_discordance
+            eta_gamma[idx] = gamma
+            if eta_gamma[idx] > poss:
+                eta_gamma[idx] = poss
+            if eta_gamma[idx] > non_discordance:
+                eta_gamma[idx] = non_discordance
+            if max_eta_gamma < eta_gamma[idx]:
+                max_eta_gamma = eta_gamma[idx]
+        return max_eta_gamma
+
+    def _concordance_index(self, gamma: float, omegas: List) -> Interval:
+        cl = 0
+        cu = 0
+        dl = 0
+        du = 0
+        i_weights = self.preference_model.weights
+        for idx in range(0, self.problem.number_of_objectives):
+            if omegas[idx] >= gamma:
+                self.coalition[idx] = 1
+                cl += i_weights[idx].lower
+                cu += i_weights[idx].upper
+            else:
+                self.coalition[idx] = 0
+                dl += i_weights[idx].lower
+                du += i_weights[idx].upper
+        if (cl + du) >= 1:
+            lower = cl
+        else:
+            lower = 1 - du
+        if (cu + dl) <= 1:
+            upper = cu
+        else:
+            upper = 1 - dl
+        return Interval(lower, upper)
+
+    def _discordance_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
+        veto = self.preference_model.veto[criteria]
+        return y[criteria].poss_smaller_than_or_eq(x[criteria] + veto)
+
+    @staticmethod
+    def _alpha_ij(x: List[Interval], y: List[Interval], criteria: int) -> float:
+        return x[criteria].poss_smaller_than_or_eq(y[criteria])
+
+
+class ITHDMPreferenceUF:
+    def __init__(self, problem: GDProblem, preference_model: OutrankingModel):
+        self.problem = problem
+        self.preference_model = preference_model
+
+    """
+    -1 if xPy, 0 if x~y, 1 otherwise
+    """
+
+    def compare(self, x: Solution, y: Solution) -> int:
+        if self.preference_model.dominance_comparator.compare(x, y) == -1:
+            return -1
+        ux = Interval(0)
+        uy = Interval(0)
+        for idx in range(self.problem.number_of_objectives):
+            ux += self.preference_model.weights[idx] * x.objectives[idx]
+            uy += self.preference_model.weights[idx] * y.objectives[idx]
+        if ux >= uy:
+            return -1
+        return 0
+
+
+class BestCompromiseDTLZ:
+    def __init__(self):
+        pass
