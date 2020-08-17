@@ -6,10 +6,12 @@ from jmetal.core.solution import FloatSolution
 
 class Instance(ABC):
     def __init__(self):
+        self.attributes = {}
         self.n_var = 0
         self.n_obj = 0
         self.n_constraints = 1
         self.initial_solutions = []
+        self.dms = 1
 
     @abstractmethod
     def read_(self, absolute_path: str):

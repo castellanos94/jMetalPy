@@ -273,6 +273,10 @@ class ITHDMPreferences:
 
 
 class ITHDMPreferenceUF:
+    """
+    Pendiente revisar, implmentacion base rara
+    """
+
     def __init__(self, problem: GDProblem, preference_model: OutrankingModel):
         self.problem = problem
         self.preference_model = preference_model
@@ -292,6 +296,103 @@ class ITHDMPreferenceUF:
         if ux >= uy:
             return -1
         return 0
+
+
+class InterClassNC:
+    def __init__(self, problem: GDProblem):
+        self.problem = problem
+        self.w = self.problem.create_solution()
+        self.w.constraints = [0.0 for _ in range(self.problem.number_of_constraints)]
+
+    def classify(self, x: Solution) -> List[int]:
+        categories = [0, 0, 0, 0]
+        for dm in range(self.problem.instance_.dms):
+            if not self.problem.get_preference_model(dm).supports_utility_function:
+                asc = self._asc_rule(x, dm)
+                if asc == self._desc_rule(x, dm):
+                    if asc < len(self.problem.instance_.attributes['r2'][dm]):
+                        if self._is_high_sat(x, dm):
+                            categories[0] += 1
+                        else:
+                            categories[1] += 1
+                    else:
+                        if self._is_high_dis(x, dm):
+                            categories[3] += 1
+                        else:
+                            categories[2] += 1
+                else:
+                    categories[3] += 1
+            else:
+                is_sat = self._is_sat_uf(x, dm)
+                is_high = self._is_high_sat(x, dm)
+                if is_sat and is_high:
+                    categories[0] += 1
+                elif not is_high and is_sat:
+                    categories[1] += 1
+                is_dis = self._is_dis_uf(x, dm)
+                is_high = self._is_high_dis_uf(x, dm)
+                if is_dis and is_high:
+                    categories[3] += 1
+                elif not is_high and is_dis:
+                    categories[2] += 1
+                else:
+                    categories[3] += 1
+
+        return categories
+
+    def _is_sat_uf(self, x: Solution, dm: int) -> bool:
+        pass
+
+    def _is_dis_uf(self, x: Solution, dm: int) -> bool:
+        pass
+
+    def _is_high_sat_uf(self, x: Solution, dm: int) -> bool:
+        pass
+
+    def _is_high_dis_uf(self, x: Solution, dm: int) -> bool:
+        pass
+
+    def _is_high_sat(self, x: Solution, dm: int) -> bool:
+        pass
+
+    def _is_high_dis(self, x: Solution, dm: int) -> bool:
+        pass
+
+    def _asc_rule(self, x: Solution, dm: int) -> int:
+        preferences = ITHDMPreferences(self.problem, self.problem.get_preference_model(dm))
+        r2 = self.problem.instance_.attributes['r2'][dm]
+        category = -1
+        for idx in range(len(r2)):
+            self.w.objectives = r2[idx]
+            if preferences.compare(self.w, x) <= -1:
+                category = idx
+        if category != -1:
+            return category
+        r1 = self.problem.instance_.attributes['r1'][dm]
+        for idx in range(len(r1)):
+            self.w.objectives = r1[idx]
+            if preferences.compare(self.w, x) <= -1:
+                category = idx
+        if category == -1:
+            return category
+        return category + len(r2)
+
+    def _desc_rule(self, x: Solution, dm: int) -> int:
+        preferences = ITHDMPreferences(self.problem, self.problem.get_preference_model(dm))
+        category = -1
+        r1 = self.problem.instance_.attributes['r1'][dm]
+        for idx in range(len(r1)):
+            self.w.objectives = r1[idx]
+            if preferences.compare(x, self.w) <= -1:
+                category = idx
+        if category != -1:
+            return category + len(r1)
+        r2 = self.problem.instance_.attributes['r2'][dm]
+        for idx in range(len(r2)):
+            self.w.objectives = r2[idx]
+            if preferences.compare(x, self.w):
+                category = idx
+        return category
 
 
 class BestCompromiseDTLZ:
