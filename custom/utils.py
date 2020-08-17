@@ -1,5 +1,7 @@
 import logging
 import os
+import random
+from typing import List
 
 import numpy as np
 
@@ -95,3 +97,69 @@ class ITHDMDominanceComparator(DominanceComparator):
         if value2_strictly_greater and best_is_two == solution1.number_of_variables:
             return 1
         return 0
+
+
+class DMGenerator:
+    def __init__(self, number_of_variables: int, number_of_objectives: int, max_objectives: List[Interval]):
+        self.numberOfObjectives = number_of_objectives
+        self.numberOfVariables = number_of_variables
+        self.maxObjectives = max_objectives
+
+    def make(self):
+        weights = self._generate_weights()
+        veto = self._generate_veto(weights)
+        return weights, veto
+
+    def _generate_veto(self, weights: List[Interval]):
+        v = []
+        idx = 0
+        while idx < self.numberOfObjectives:
+            midp = self.maxObjectives[idx].midpoint()
+            width = self.maxObjectives[idx].width()
+            r1 = random.uniform(0, 1)
+            vl = midp - r1 * (width / 10.0)
+            r2 = random.uniform(0, 1)
+            vu = midp + r2 * (width / 10.0)
+            v.append(Interval(vl, vu))
+            valid = True
+            for jdx in range(idx):
+                if weights[jdx] >= weights[idx] and v[jdx] >= v[idx]:
+                    valid = False
+                    break
+
+            if valid:
+                idx += 1
+        return v
+
+    def _generate_weights(self):
+        weight = []
+        valid = False
+        while not valid:
+            valid = True
+            weight = self._butler_weight()
+            for v in weight:
+                if v > 0.5 * (1 - v):
+                    valid = False
+            if valid:
+                valid = sum(weight) == 1.0
+        return [Interval(w) for w in weight]
+
+    def _butler_weight(self) -> list:
+        vector = [0] * (self.numberOfObjectives + 1)
+        same = True
+        while same:
+            vector = [random.randint(0, 1000) / 1000.0 for _ in vector]
+            for idx in range(self.numberOfObjectives):
+                while vector[idx] <= 0 or vector[idx] >= 1.0:
+                    vector[idx] = random.randint(0, 1000) / 1000.0
+            vector[self.numberOfObjectives] = 1
+            same = False
+            for idx in range(self.numberOfObjectives + 1):
+                for jdx in range(self.numberOfObjectives):
+                    if vector[jdx] > vector[jdx + 1]:
+                        aux = vector[jdx]
+                        vector[jdx] = vector[jdx + 1]
+                        vector[jdx + 1] = aux
+                    if vector[jdx] == vector[jdx + 1]:
+                        same = True
+        return vector[0:self.numberOfObjectives]

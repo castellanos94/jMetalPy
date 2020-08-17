@@ -1,8 +1,9 @@
-import random
+from typing import List
 
 from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences
 from custom.instance import PspInstance, DTLZInstance
-from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, ReferenceDirectionFromSolution
+from custom.interval import Interval
+from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, ReferenceDirectionFromSolution, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
 from jmetal.lab.visualization import Plot
@@ -97,6 +98,17 @@ def dtlz1_test():
                     format='png')
 
 
+def dm_generator(number_of_objectives: int, number_of_variables: int, max_objectives: List[Interval]):
+    generator = DMGenerator(number_of_variables=number_of_variables, number_of_objectives=number_of_objectives,
+                            max_objectives=max_objectives)
+    w, v = generator.make()
+    print(number_of_objectives)
+    print(number_of_variables)
+    print(w)
+    print(v)
+    print(Interval(0.51, 0.67))
+
+
 if __name__ == '__main__':
-    random.seed(8435)
-    psp_test()
+    # random.seed(8435)
+    dm_generator(10, 100, 10 * [Interval(0, 1)])

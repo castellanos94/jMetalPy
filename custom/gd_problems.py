@@ -104,14 +104,14 @@ class PortfolioSocialProblem(BinaryProblemGD):
 
     def evaluate(self, solution: BinarySolution) -> BinarySolution:
         budget = 0
-        objectives = self.number_of_objectives*[0.0]
+        objectives = self.number_of_objectives * [0.0]
 
         for index, bits in enumerate(solution.variables[0]):
             if bits:
                 budget += self.instance_.projects[index][0]
                 for obj in range(0, self.number_of_objectives):
                     objectives[obj] += self.instance_.projects[index][obj + 3]
-        solution.objectives = [-1 * obj for obj in objectives]
+        solution.objectives = [-obj for obj in objectives]
 
         solution.constraints = [self.budget - budget]
         return solution

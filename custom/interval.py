@@ -19,8 +19,7 @@ class Interval:
         else:
             self.upper = upper
         if self.lower > self.upper:
-            self.lower = upper
-            self.upper = lower
+            print('interval invalid')
 
     def __add__(self, other):
         if isinstance(other, (float, int)):
@@ -194,7 +193,7 @@ class Interval:
         return Interval(0, abs(u))
 
     def __str__(self):
-        return '{:.2f} {:.2f}'.format(self.lower, self.upper)
+        return '{:.3f} {:.3f}'.format(self.lower, self.upper)
 
     def __repr__(self):
-        return '{:.2f} {:.2f}'.format(self.lower, self.upper)
+        return '{:.3f} {:.3f}'.format(self.lower, self.upper)
