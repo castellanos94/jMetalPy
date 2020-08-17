@@ -1,3 +1,4 @@
+import random
 from typing import List
 
 from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences
@@ -99,6 +100,7 @@ def dtlz1_test():
 
 
 def dm_generator(number_of_objectives: int, number_of_variables: int, max_objectives: List[Interval]):
+    print(number_of_variables, number_of_objectives, max_objectives)
     generator = DMGenerator(number_of_variables=number_of_variables, number_of_objectives=number_of_objectives,
                             max_objectives=max_objectives)
     w, v = generator.make()
@@ -110,5 +112,5 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
 
 
 if __name__ == '__main__':
-    # random.seed(8435)
-    dm_generator(10, 100, 10 * [Interval(0, 1)])
+    random.seed(8435)
+    dm_generator(10, 7, 10 * [Interval(0, 0.5)])

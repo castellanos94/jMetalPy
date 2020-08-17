@@ -137,11 +137,13 @@ class DMGenerator:
         while not valid:
             valid = True
             weight = self._butler_weight()
-            for v in weight:
-                if v > 0.5 * (1 - v):
-                    valid = False
-            if valid:
-                valid = sum(weight) == 1.0
+            if sum(weight) == 1.0:
+                for v in weight:
+                    if v > 0.5 * (1 - v):
+                        valid = False
+                        break
+            else:
+                valid = False
         return [Interval(w) for w in weight]
 
     def _butler_weight(self) -> list:
