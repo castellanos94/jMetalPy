@@ -2,9 +2,10 @@ import random
 from typing import List
 
 from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences
-from custom.instance import PspInstance, DTLZInstance
+from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
-from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, ReferenceDirectionFromSolution, DMGenerator
+from custom.util_problem import ReferenceDirectionFromSolution
+from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
 from jmetal.lab.visualization import Plot
@@ -113,4 +114,6 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
 
 if __name__ == '__main__':
     random.seed(8435)
-    dm_generator(4, 7, 4 * [Interval(0, 0.5)])
+    #dm_generator(4, 7, 4 * [Interval(0, 0.5)])
+    psp_instance = PspIntervalInstance().read_('/home/thinkpad/Documents/jemoa/src/main/resources/instances/gd/GD_ITHDM-UFCA.txt')
+    print(psp_instance)

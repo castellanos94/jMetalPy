@@ -18,6 +18,12 @@ class Interval:
             self.upper = lower
         else:
             self.upper = upper
+
+        if type(self.upper) == str:
+            self.lower = float(self.lower)
+        if type(self.upper) == str:
+            self.upper = float(self.upper)
+
         if self.lower > self.upper:
             print('interval invalid')
 

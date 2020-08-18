@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import List
 
 from custom.interval import Interval
+from custom.utils import OutrankingModel
 from jmetal.core.solution import FloatSolution
 
 
@@ -157,40 +159,134 @@ class DTLZInstance(Instance):
                 self.initial_solutions.append(solution)
 
 
+def clean_line(line: str) -> List[str]:
+    line_ = line.replace('\"', "").split("//")
+    return [v.replace(',', '') for v in line_[0].split()]
+
+
 class PspIntervalInstance(PspInstance):
+
     def read_(self, absolute_path: str):
         with open(absolute_path) as f:
             content = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
         content = [x.strip() for x in content]
         index = 0
-        self.budget = Interval(content[index])
+        line = clean_line(content[index])
+        self.budget = Interval(line[0], line[1])
         index += 1
-        self.n_obj = int(content[index])
+        line = clean_line(content[index])
+        self.n_obj = int(line[0])
         index += 1
-        for v in content[index].split():
-            self.weights.append(float(v))
-        index += 1
-        for v in content[index].split():
-            self.indifference_threshold.append(float(v))
-        index += 1
-        for v in content[index].split():
-            self.veto_threshold.append(float(v))
-        index += 1
-        n_a = int(content[index])
-        for i in range(0, n_a):
+        line = clean_line(content[index])
+        self.attributes['dms'] = int(line[0])
+        dm_type = []
+        for idx in range(self.attributes['dms']):
             index += 1
-            a = [float(v) for v in content[index].split()]
-            self.areas.append(a)
+            line = clean_line(content[index])
+            dm_type.append(int(line[0]))
         index += 1
-        n_r = int(content[index])
-        for i in range(0, n_r):
+        line = clean_line(content[index])
+        self.n_constraints = int(line.__getitem__(0))
+
+        for dm in range(self.attributes['dms']):
             index += 1
-            a = [float(v) for v in content[index].split()]
-            self.regions.append(a)
+            line = clean_line(content[index])
+            idx = 0
+            w = []
+            while idx < self.n_obj * 2:
+                w.append(Interval(line[idx], line[idx + 1]))
+                idx += 2
+            self.weights.append(w)
+        for dm in range(self.attributes['dms']):
+            index += 1
+            line = clean_line(content[index])
+            idx = 0
+            v = []
+            while idx < self.n_obj * 2:
+                v.append(Interval(line[idx], line[idx + 1]))
+                idx += 2
+            self.veto_threshold.append(v)
+        beta = []
+        for dm in range(self.attributes['dms']):
+            index += 1
+            line = clean_line(content[index])
+            beta.append(Interval(line[0], line[1]))
+        chi = []
+        for dm in range(self.attributes['dms']):
+            index += 1
+            line = clean_line(content[index])
+            chi.append(float(line[0]))
+        alpha = []
+        for dm in range(self.attributes['dms']):
+            index += 1
+            line = clean_line(content[index])
+            alpha.append(float(line[0]))
+        lambdas = []
+        for dm in range(self.attributes['dms']):
+            index += 1
+            line = clean_line(content[index])
+            lambdas.append(Interval(line[0], line[1]))
+        models = []
+        for dm in range(self.attributes['dms']):
+            models.append(OutrankingModel(
+                self.weights[dm], self.veto_threshold[dm], alpha[dm], beta[dm], lambdas[dm], chi[dm], dm_type[dm] == 1
+            ))
+        self.attributes['models'] = models
         index += 1
-        self.n_var = int(content[index])
-        for i in range(0, self.n_var):
+        line = clean_line(content[index])
+        self.n_var = int(line[0])
+        projects = []
+        for p in range(self.n_var):
+            idx = 0
             index += 1
-            a = [float(v) for v in content[index].split()]
-            self.projects.append(a)
+            line = clean_line(content[index])
+            project = []
+            while idx < self.n_obj * 2 + 1:
+                project.append(Interval(line[idx], line[idx + 1]))
+                idx += 2
+            projects.append(project)
+        index += 1
+        line = clean_line(content[index])
+        if line[0] == "TRUE":
+            best_compromise = []
+            for dm in range(self.attributes['dms']):
+                v = ''
+                index += 1
+                line = clean_line(content[index])
+                for idx in range(self.n_var):
+                    v += line[idx]
+                best_compromise.append(v)
+        index += 1
+        line = clean_line(content[index])
+        if line[0] == "TRUE":
+            r2_set = []
+            r1_set = []
+            for dm in range(self.attributes['dms']):
+                index += 1
+                line = clean_line(content[index])
+                n_size = int(int(line[0]) / 2)
+                r2 = []
+                r1 = []
+                for n_row in range(n_size):
+                    r2_ = []
+                    index += 1
+                    line = clean_line(content[index])
+                    idx = 0
+                    while idx < self.n_obj * 2:
+                        r2_.append(Interval(line[idx], line[idx + 1]))
+                        idx += 2
+                    r2.append(r2_)
+                for n_row in range(n_size):
+                    r1_ = []
+                    index += 1
+                    line = clean_line(content[index])
+                    idx = 0
+                    while idx < self.n_obj * 2:
+                        r1_.append(Interval(line[idx], line[idx + 1]))
+                        idx += 2
+                    r1.append(r1_)
+                r2_set.append(r2)
+                r1_set.append(r1)
+            self.attributes['r2'] = r2_set
+            self.attributes['r1'] = r1_set

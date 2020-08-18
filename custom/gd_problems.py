@@ -4,7 +4,6 @@ from math import pi, cos
 from typing import TypeVar
 
 from custom.instance import DTLZInstance, Instance, PspInstance
-from custom.utils import OutrankingModel
 from jmetal.core.problem import Problem
 from jmetal.core.solution import FloatSolution, BinarySolution
 
@@ -18,9 +17,9 @@ class GDProblem(Problem[S], ABC):
         self.number_of_variables = instance_.n_var
         self.number_of_objectives = instance_.n_obj
         self.number_of_constraints = instance_.n_constraints
-        self.models = []
+        self.models = self.instance_.attributes['models']
 
-    def get_preference_model(self, dm: int) -> OutrankingModel:
+    def get_preference_model(self, dm: int):
         return self.models[dm]
 
 
