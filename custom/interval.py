@@ -25,7 +25,8 @@ class Interval:
             self.upper = float(self.upper)
 
         if self.lower > self.upper:
-            print('interval invalid')
+            pass
+            # print('interval invalid')
 
     def __add__(self, other):
         if isinstance(other, (float, int)):

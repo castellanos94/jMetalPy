@@ -1,10 +1,10 @@
 import random
 from typing import List
 
-from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences
+from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences, PortfolioSocialProblemGD
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
-from custom.util_problem import ReferenceDirectionFromSolution
+from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
@@ -113,7 +113,17 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
 
 
 if __name__ == '__main__':
-    random.seed(8435)
-    #dm_generator(4, 7, 4 * [Interval(0, 0.5)])
-    psp_instance = PspIntervalInstance().read_('/home/thinkpad/Documents/jemoa/src/main/resources/instances/gd/GD_ITHDM-UFCA.txt')
-    print(psp_instance)
+    random.seed(1)
+    # dm_generator(4, 7, 4 * [Interval(0, 0.5)])
+    psp_instance = PspIntervalInstance()
+    psp_instance.read_('/home/thinkpad/Documents/jemoa/src/main/resources/instances/gd/GD_ITHDM-UFCA.txt')
+
+    problem = PortfolioSocialProblemGD(psp_instance)
+    solutions = []
+    for idx in range(len(problem.instance_.attributes['best_compromise'])):
+        s = problem.create_from_string(problem.instance_.attributes['best_compromise'][idx])
+        problem.evaluate(s)
+        solutions.append(s)
+    classifier = InterClassNC(problem)
+    for s in solutions:
+        print(s.constraints,classifier.classify(s))

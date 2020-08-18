@@ -4,6 +4,7 @@ from math import pi, cos
 from typing import TypeVar
 
 from custom.instance import DTLZInstance, Instance, PspInstance
+from custom.interval import Interval
 from jmetal.core.problem import Problem
 from jmetal.core.solution import FloatSolution, BinarySolution
 
@@ -122,3 +123,55 @@ class PortfolioSocialProblem(BinaryProblemGD):
 
     def get_name(self) -> str:
         return 'PortfolioSocialProblem'
+
+
+class PortfolioSocialProblemGD(BinaryProblemGD):
+    def __init__(self, instance_: PspInstance):
+        super(PortfolioSocialProblemGD, self).__init__(instance_)
+        self.budget = instance_.budget
+        self.positions = [idx for idx in range(self.number_of_bits)]
+
+    def create_solution(self) -> BinarySolution:
+        new_solution = BinarySolution(number_of_variables=self.number_of_variables,
+                                      number_of_objectives=self.number_of_objectives)
+
+        new_solution.variables[0] = []
+        budget = Interval(0)
+        random.shuffle(self.positions)
+        for v in self.positions:
+            tmp = budget + self.instance_.projects[v][0]
+            poss = self.budget.poss_greater_than_or_eq(tmp)
+            if poss >= self.get_preference_model(0).chi:
+                new_solution.variables[0].append(True)
+                budget = tmp
+            else:
+                new_solution.variables[0].append(False)
+        return new_solution
+
+    def create_from_string(self, variables: str) -> BinarySolution:
+        new_solution = BinarySolution(number_of_variables=self.number_of_variables,
+                                      number_of_objectives=self.number_of_objectives)
+
+        new_solution.variables[0] = \
+            [True if variables[_] == '1' else False for _ in range(
+                self.number_of_bits)]
+        return new_solution
+
+    def evaluate(self, solution: BinarySolution) -> BinarySolution:
+        budget = Interval(0)
+        objectives = self.number_of_objectives * [Interval(0)]
+        for index, bits in enumerate(solution.variables[0]):
+            if bits:
+                budget += self.instance_.projects[index][0]
+                for obj in range(0, self.number_of_objectives):
+                    objectives[obj] += self.instance_.projects[index][obj+1]
+        poss = self.budget.poss_greater_than_or_eq(budget)
+        if poss < self.get_preference_model(0).chi:
+            solution.constraints = [self.budget - budget]
+        else:
+            solution.constraints = [0]
+        solution.objectives = [-obj for obj in objectives]
+        return solution
+
+    def get_name(self) -> str:
+        return 'PortfolioSocialProblemGD'

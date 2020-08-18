@@ -46,10 +46,11 @@ class InterClassNC:
 
     def classify(self, x: Solution) -> List[int]:
         categories = [0, 0, 0, 0]
-        for dm in range(self.problem.instance_.dms):
+        for dm in range(self.problem.instance_.attributes['dms']):
             if not self.problem.get_preference_model(dm).supports_utility_function:
                 asc = self._asc_rule(x, dm)
                 if asc == self._desc_rule(x, dm):
+
                     if asc < len(self.problem.instance_.attributes['r2'][dm]):
                         if self._is_high_sat(x, dm):
                             categories[0] += 1
@@ -65,15 +66,16 @@ class InterClassNC:
             else:
                 is_sat = self._is_sat_uf(x, dm)
                 is_high = self._is_high_sat(x, dm)
+                is_dis = self._is_dis_uf(x, dm)
+                is_high_dis = self._is_high_dis_uf(x, dm)
+
                 if is_sat and is_high:
                     categories[0] += 1
                 elif not is_high and is_sat:
                     categories[1] += 1
-                is_dis = self._is_dis_uf(x, dm)
-                is_high = self._is_high_dis_uf(x, dm)
-                if is_dis and is_high:
+                elif is_dis and is_high_dis:
                     categories[3] += 1
-                elif not is_high and is_dis:
+                elif not is_high_dis and is_dis:
                     categories[2] += 1
                 else:
                     categories[3] += 1

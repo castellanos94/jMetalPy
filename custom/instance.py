@@ -236,7 +236,7 @@ class PspIntervalInstance(PspInstance):
         index += 1
         line = clean_line(content[index])
         self.n_var = int(line[0])
-        projects = []
+        self.projects = []
         for p in range(self.n_var):
             idx = 0
             index += 1
@@ -245,7 +245,7 @@ class PspIntervalInstance(PspInstance):
             while idx < self.n_obj * 2 + 1:
                 project.append(Interval(line[idx], line[idx + 1]))
                 idx += 2
-            projects.append(project)
+            self.projects.append(project)
         index += 1
         line = clean_line(content[index])
         if line[0] == "TRUE":
@@ -257,6 +257,7 @@ class PspIntervalInstance(PspInstance):
                 for idx in range(self.n_var):
                     v += line[idx]
                 best_compromise.append(v)
+            self.attributes['best_compromise'] = best_compromise
         index += 1
         line = clean_line(content[index])
         if line[0] == "TRUE":

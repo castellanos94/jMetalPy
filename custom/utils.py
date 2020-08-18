@@ -3,7 +3,10 @@ import os
 import random
 from typing import List
 
+import numpy as np
+
 from custom.interval import Interval
+from jmetal.algorithm.multiobjective.nsgaiii import ReferenceDirectionFactory
 from jmetal.core.solution import BinarySolution, Solution
 from jmetal.util.comparator import DominanceComparator, Comparator, OverallConstraintViolationComparator
 
@@ -85,7 +88,6 @@ class OutrankingModel:
         self.chi = chi
         self.supports_utility_function = supports_utility_function
         self.dominance_comparator = ITHDMDominanceComparator()
-
 
 class DMGenerator:
     def __init__(self, number_of_variables: int, number_of_objectives: int, max_objectives: List[Interval]):
@@ -270,6 +272,7 @@ class ITHDMPreferenceUF:
         if ux >= uy:
             return -1
         return 0
+
 
 
 class BestCompromiseDTLZ:
