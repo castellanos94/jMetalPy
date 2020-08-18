@@ -26,7 +26,7 @@ class Interval:
 
         if self.lower > self.upper:
             pass
-            # print('interval invalid')
+            #print('interval invalid')
 
     def __add__(self, other):
         if isinstance(other, (float, int)):
@@ -164,7 +164,7 @@ class Interval:
         return self / other
 
     def __neg__(self):
-        return Interval(-1 * self.lower, -1 * self.upper)
+        return -1 * self
 
     def __pos__(self):
         return Interval(1 * self.lower, 1 * self.upper)

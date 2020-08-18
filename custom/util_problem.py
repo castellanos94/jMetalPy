@@ -49,8 +49,8 @@ class InterClassNC:
         for dm in range(self.problem.instance_.attributes['dms']):
             if not self.problem.get_preference_model(dm).supports_utility_function:
                 asc = self._asc_rule(x, dm)
-                if asc == self._desc_rule(x, dm):
-
+                dsc = self._desc_rule(x, dm)
+                if asc == dsc:
                     if asc < len(self.problem.instance_.attributes['r2'][dm]):
                         if self._is_high_sat(x, dm):
                             categories[0] += 1
@@ -65,21 +65,18 @@ class InterClassNC:
                     categories[3] += 1
             else:
                 is_sat = self._is_sat_uf(x, dm)
-                is_high = self._is_high_sat(x, dm)
-                is_dis = self._is_dis_uf(x, dm)
-                is_high_dis = self._is_high_dis_uf(x, dm)
-
+                is_high = self._is_high_sat_uf(x, dm)
                 if is_sat and is_high:
                     categories[0] += 1
                 elif not is_high and is_sat:
                     categories[1] += 1
-                elif is_dis and is_high_dis:
-                    categories[3] += 1
-                elif not is_high_dis and is_dis:
-                    categories[2] += 1
                 else:
-                    categories[3] += 1
-
+                    is_dis = self._is_dis_uf(x, dm)
+                    is_high_dis = self._is_high_dis_uf(x, dm)
+                    if not is_high_dis and is_dis:
+                        categories[2] += 1
+                    else:
+                        categories[3] += 1
         return categories
 
     """
@@ -89,7 +86,7 @@ class InterClassNC:
     """
 
     def _is_sat_uf(self, x: Solution, dm: int) -> bool:
-        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
             self.w.objectives = r1[idx]
@@ -101,7 +98,7 @@ class InterClassNC:
             self.w.objectives = r2[idx]
             if preference.compare(self.w, x) == -1:
                 count += 1
-        return count == 0
+        return bool(count == 0)
 
     """
     Def 19: DM is compatible with weighted-sum function model, The DM is said to be dissatisfied with a feasible S 
@@ -110,7 +107,7 @@ class InterClassNC:
     """
 
     def _is_dis_uf(self, x: Solution, dm: int) -> bool:
-        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         count = 0
         for idx in range(len(r2)):
@@ -123,9 +120,9 @@ class InterClassNC:
         count = 0
         for idx in range(len(r1)):
             self.w.objectives = r1[idx]
-            if preference.compare(self.w, x) == -1:
+            if preference.compare(x, self.w) == -1:
                 count += 1
-        return count == 0
+        return bool(count == 0)
 
     """
      Def 20: If the DM is sat with x, we say that the DM is high sat with x iff the following condition is also 
@@ -133,7 +130,7 @@ class InterClassNC:
     """
 
     def _is_high_sat_uf(self, x: Solution, dm: int) -> bool:
-        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
@@ -147,7 +144,7 @@ class InterClassNC:
     """
 
     def _is_high_dis_uf(self, x: Solution, dm: int) -> bool:
-        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
             self.w.objectives = r1[idx]
@@ -160,7 +157,7 @@ class InterClassNC:
     """
 
     def _is_high_sat(self, x: Solution, dm: int) -> bool:
-        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
+        preferences = ITHDMPreferences(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
@@ -173,8 +170,8 @@ class InterClassNC:
     """
 
     def _is_high_dis(self, x: Solution, dm: int) -> bool:
-        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
-        r1 = self.problem.instance_.attributes['r1']
+        preferences = ITHDMPreferences(self.problem.objectives_type, self.problem.get_preference_model(dm))
+        r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
             self.w.objectives = r1[idx]
             if preferences.compare(self.w, x) > -1:
@@ -182,13 +179,14 @@ class InterClassNC:
         return True
 
     def _asc_rule(self, x: Solution, dm: int) -> int:
-        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
+        preferences = ITHDMPreferences(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         category = -1
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
             if preferences.compare(self.w, x) <= -1:
                 category = idx
+                break
         if category != -1:
             return category
         r1 = self.problem.instance_.attributes['r1'][dm]
@@ -196,23 +194,26 @@ class InterClassNC:
             self.w.objectives = r1[idx]
             if preferences.compare(self.w, x) <= -1:
                 category = idx
+                break
         if category == -1:
             return category
         return category + len(r2)
 
     def _desc_rule(self, x: Solution, dm: int) -> int:
-        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
+        preferences = ITHDMPreferences(self.problem.objectives_type, self.problem.get_preference_model(dm))
         category = -1
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
             self.w.objectives = r1[idx]
             if preferences.compare(x, self.w) <= -1:
                 category = idx
+                break
         if category != -1:
             return category + len(r1)
         r2 = self.problem.instance_.attributes['r2'][dm]
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
-            if preferences.compare(x, self.w):
+            if preferences.compare(x, self.w) <= -1:
                 category = idx
+                break
         return category

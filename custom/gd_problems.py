@@ -19,6 +19,7 @@ class GDProblem(Problem[S], ABC):
         self.number_of_objectives = instance_.n_obj
         self.number_of_constraints = instance_.n_constraints
         self.models = self.instance_.attributes['models']
+        self.objectives_type = self.number_of_objectives * [False]  # Minimization
 
     def get_preference_model(self, dm: int):
         return self.models[dm]
@@ -130,6 +131,7 @@ class PortfolioSocialProblemGD(BinaryProblemGD):
         super(PortfolioSocialProblemGD, self).__init__(instance_)
         self.budget = instance_.budget
         self.positions = [idx for idx in range(self.number_of_bits)]
+        self.objectives_type = self.number_of_objectives * [True]
 
     def create_solution(self) -> BinarySolution:
         new_solution = BinarySolution(number_of_variables=self.number_of_variables,
@@ -138,14 +140,13 @@ class PortfolioSocialProblemGD(BinaryProblemGD):
         new_solution.variables[0] = []
         budget = Interval(0)
         random.shuffle(self.positions)
+        new_solution.variables[0] = self.number_of_bits * [False]
         for v in self.positions:
             tmp = budget + self.instance_.projects[v][0]
             poss = self.budget.poss_greater_than_or_eq(tmp)
             if poss >= self.get_preference_model(0).chi:
-                new_solution.variables[0].append(True)
+                new_solution.variables[0][v] = True
                 budget = tmp
-            else:
-                new_solution.variables[0].append(False)
         return new_solution
 
     def create_from_string(self, variables: str) -> BinarySolution:
@@ -158,19 +159,20 @@ class PortfolioSocialProblemGD(BinaryProblemGD):
         return new_solution
 
     def evaluate(self, solution: BinarySolution) -> BinarySolution:
-        budget = Interval(0)
+        current_budget = Interval(0)
         objectives = self.number_of_objectives * [Interval(0)]
         for index, bits in enumerate(solution.variables[0]):
             if bits:
-                budget += self.instance_.projects[index][0]
+                current_budget += self.instance_.projects[index][0]
                 for obj in range(0, self.number_of_objectives):
-                    objectives[obj] += self.instance_.projects[index][obj+1]
-        poss = self.budget.poss_greater_than_or_eq(budget)
+                    objectives[obj] += self.instance_.projects[index][obj + 1]
+        poss = self.budget.poss_greater_than_or_eq(current_budget)
         if poss < self.get_preference_model(0).chi:
-            solution.constraints = [self.budget - budget]
+            solution.constraints = [self.budget - current_budget]
         else:
             solution.constraints = [0]
-        solution.objectives = [-obj for obj in objectives]
+        solution.budget = current_budget
+        solution.objectives = objectives
         return solution
 
     def get_name(self) -> str:

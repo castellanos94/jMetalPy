@@ -3,10 +3,7 @@ import os
 import random
 from typing import List
 
-import numpy as np
-
 from custom.interval import Interval
-from jmetal.algorithm.multiobjective.nsgaiii import ReferenceDirectionFactory
 from jmetal.core.solution import BinarySolution, Solution
 from jmetal.util.comparator import DominanceComparator, Comparator, OverallConstraintViolationComparator
 
@@ -47,9 +44,11 @@ class ITHDMDominanceComparator(DominanceComparator):
     Eta-Dominance, default alpha value: 1.0
     """
 
-    def __init__(self, alpha: float = 1, constraint_comparator: Comparator = OverallConstraintViolationComparator()):
+    def __init__(self, objectives_type: List[bool], alpha: float = 1,
+                 constraint_comparator: Comparator = OverallConstraintViolationComparator()):
         super().__init__(constraint_comparator)
         self.alpha = alpha
+        self.objectives_type = objectives_type
 
     def __dominance_test(self, solution1: Solution, solution2: Solution) -> float:
         best_is_one = 0
@@ -59,12 +58,18 @@ class ITHDMDominanceComparator(DominanceComparator):
         for i in range(solution1.number_of_objectives):
             value1 = Interval(solution1.objectives[i])
             value2 = Interval(solution2.objectives[i])
-            poss = value2.possibility(value1)
+            if self.objectives_type[i]:
+                poss = value1.possibility(value2)
+            else:
+                poss = value2.possibility(value1)
             if poss >= self.alpha:
                 if not value1_strictly_greater and poss > 0.5:
                     value1_strictly_greater = True
                 best_is_one += 1
-            poss = value1.possibility(value2)
+            if self.objectives_type[i]:
+                poss = value2.possibility(value1)
+            else:
+                poss = value1.possibility(value2)
             if poss >= self.alpha:
                 if not value2_strictly_greater and poss > 0.5:
                     value2_strictly_greater = True
@@ -87,7 +92,7 @@ class OutrankingModel:
         self.lambda_ = lambda_
         self.chi = chi
         self.supports_utility_function = supports_utility_function
-        self.dominance_comparator = ITHDMDominanceComparator()
+
 
 class DMGenerator:
     def __init__(self, number_of_variables: int, number_of_objectives: int, max_objectives: List[Interval]):
@@ -165,11 +170,13 @@ class ITHDMPreferences:
     https://doi.org/10.1016/j.omega.2019.05.001
     """
 
-    def __init__(self, preference_model: OutrankingModel):
+    def __init__(self, objectives_type: List[bool], preference_model: OutrankingModel):
         self.preference_model = preference_model
         self.sigmaXY = None
         self.sigmaYX = None
         self.coalition = None
+        self.objectives_type = objectives_type
+        self.dominance_comparator = ITHDMDominanceComparator(objectives_type, preference_model.alpha)
 
     """
         Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
@@ -179,7 +186,7 @@ class ITHDMPreferences:
         self.coalition = [None for _ in range(x.number_of_objectives)]
         self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
         self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
-        if self.preference_model.dominance_comparator.compare(x, y) == -1:
+        if self.dominance_comparator.compare(x, y) == -1:
             return -2
         if self.sigmaXY >= self.preference_model.beta > self.sigmaYX:
             return -1
@@ -189,14 +196,15 @@ class ITHDMPreferences:
             return 1
         return 2
 
-    def _credibility_index(self, x: List, y: List) -> float:
-        omegas = []
-        dj = []
+    def _credibility_index(self, x: List[Interval], y: List[Interval]) -> float:
+        omegas = [0] * len(x)
+        dj = [0] * len(x)
         eta_gamma = [0] * len(x)
         max_eta_gamma = float('-inf')
         for idx in range(len(x)):
-            omegas.append(self._alpha_ij(x, y, idx))
-            dj.append(self._discordance_ij(x, y, idx))
+            omegas[idx] = self._alpha_ij(x, y, idx)
+            dj[idx] = self._discordance_ij(x, y, idx)
+
         for idx in range(len(x)):
             gamma = omegas[idx]
             ci = self._concordance_index(gamma, omegas)
@@ -242,10 +250,13 @@ class ITHDMPreferences:
 
     def _discordance_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
         veto = self.preference_model.veto[criteria]
+        if self.objectives_type[criteria]:
+            return y[criteria].poss_greater_than_or_eq(x[criteria] + veto)
         return y[criteria].poss_smaller_than_or_eq(x[criteria] + veto)
 
-    @staticmethod
-    def _alpha_ij(x: List[Interval], y: List[Interval], criteria: int) -> float:
+    def _alpha_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
+        if self.objectives_type[criteria]:
+            return x[criteria].poss_greater_than_or_eq(y[criteria])
         return x[criteria].poss_smaller_than_or_eq(y[criteria])
 
 
@@ -254,15 +265,17 @@ class ITHDMPreferenceUF:
     Pendiente revisar, implmentacion base rara
     """
 
-    def __init__(self, preference_model: OutrankingModel):
+    def __init__(self, objectives_type: List[bool], preference_model: OutrankingModel):
         self.preference_model = preference_model
+        self.objectives_type = objectives_type
+        self.dominance_comparator = ITHDMDominanceComparator(objectives_type, preference_model.alpha)
 
     """
     -1 if xPy, 0 if x~y, 1 otherwise
     """
 
     def compare(self, x: Solution, y: Solution) -> int:
-        if self.preference_model.dominance_comparator.compare(x, y) == -1:
+        if self.dominance_comparator.compare(x, y) == -1:
             return -1
         ux = Interval(0)
         uy = Interval(0)
@@ -272,7 +285,6 @@ class ITHDMPreferenceUF:
         if ux >= uy:
             return -1
         return 0
-
 
 
 class BestCompromiseDTLZ:

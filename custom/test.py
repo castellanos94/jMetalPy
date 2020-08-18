@@ -112,18 +112,26 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
     print(Interval(0.51, 0.67))
 
 
-if __name__ == '__main__':
-    random.seed(1)
-    # dm_generator(4, 7, 4 * [Interval(0, 0.5)])
+def test_classifier():
     psp_instance = PspIntervalInstance()
     psp_instance.read_('/home/thinkpad/Documents/jemoa/src/main/resources/instances/gd/GD_ITHDM-UFCA.txt')
 
     problem = PortfolioSocialProblemGD(psp_instance)
     solutions = []
-    for idx in range(len(problem.instance_.attributes['best_compromise'])):
-        s = problem.create_from_string(problem.instance_.attributes['best_compromise'][idx])
+    for v in problem.instance_.attributes['best_compromise']:
+        s = problem.create_from_string(v)
+        problem.evaluate(s)
+        solutions.append(s)
+    for idx in range(10):
+        s = problem.create_solution()
         problem.evaluate(s)
         solutions.append(s)
     classifier = InterClassNC(problem)
     for s in solutions:
-        print(s.constraints,classifier.classify(s))
+        print(s.constraints, s.budget, classifier.classify(s))
+
+
+if __name__ == '__main__':
+    random.seed(1)
+    # dm_generator(4, 7, 4 * [Interval(0, 0.5)])
+    test_classifier()
