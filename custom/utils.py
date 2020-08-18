@@ -188,18 +188,18 @@ class ITHDMPreferences:
     https://doi.org/10.1016/j.omega.2019.05.001
     """
 
-    def __init__(self, problem: GDProblem, preference_model: OutrankingModel):
-        self.problem = problem
+    def __init__(self, preference_model: OutrankingModel):
         self.preference_model = preference_model
         self.sigmaXY = None
         self.sigmaYX = None
-        self.coalition = [None for _ in range(self.problem.number_of_objectives)]
+        self.coalition = None
 
     """
         Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
     """
 
     def compare(self, x: Solution, y: Solution) -> int:
+        self.coalition = [None for _ in range(x.number_of_objectives)]
         self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
         self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
         if self.preference_model.dominance_comparator.compare(x, y) == -1:
@@ -215,17 +215,17 @@ class ITHDMPreferences:
     def _credibility_index(self, x: List, y: List) -> float:
         omegas = []
         dj = []
-        eta_gamma = [0] * self.problem.number_of_objectives
+        eta_gamma = [0] * len(x)
         max_eta_gamma = float('-inf')
-        for idx in range(self.problem.number_of_objectives):
+        for idx in range(len(x)):
             omegas.append(self._alpha_ij(x, y, idx))
             dj.append(self._discordance_ij(x, y, idx))
-        for idx in range(self.problem.number_of_objectives):
+        for idx in range(len(x)):
             gamma = omegas[idx]
             ci = self._concordance_index(gamma, omegas)
             poss = ci.poss_greater_than_or_eq(self.preference_model.lambda_)
             max_discordance = float('-inf')
-            for jdx in range(self.problem.number_of_objectives):
+            for jdx in range(len(x)):
                 if self.coalition[jdx] == 0 and dj[jdx] > max_discordance:
                     max_discordance = dj[jdx]
             non_discordance = 1 - max_discordance
@@ -244,7 +244,7 @@ class ITHDMPreferences:
         dl = 0
         du = 0
         i_weights = self.preference_model.weights
-        for idx in range(0, self.problem.number_of_objectives):
+        for idx in range(len(i_weights)):
             if omegas[idx] >= gamma:
                 self.coalition[idx] = 1
                 cl += i_weights[idx].lower
@@ -277,8 +277,7 @@ class ITHDMPreferenceUF:
     Pendiente revisar, implmentacion base rara
     """
 
-    def __init__(self, problem: GDProblem, preference_model: OutrankingModel):
-        self.problem = problem
+    def __init__(self, preference_model: OutrankingModel):
         self.preference_model = preference_model
 
     """
@@ -290,7 +289,7 @@ class ITHDMPreferenceUF:
             return -1
         ux = Interval(0)
         uy = Interval(0)
-        for idx in range(self.problem.number_of_objectives):
+        for idx in range(x.number_of_objectives):
             ux += self.preference_model.weights[idx] * x.objectives[idx]
             uy += self.preference_model.weights[idx] * y.objectives[idx]
         if ux >= uy:
@@ -299,10 +298,19 @@ class ITHDMPreferenceUF:
 
 
 class InterClassNC:
+    """
+    Required R2, R1 sets present in problem attributes.
+    """
+
     def __init__(self, problem: GDProblem):
         self.problem = problem
         self.w = self.problem.create_solution()
         self.w.constraints = [0.0 for _ in range(self.problem.number_of_constraints)]
+
+    """
+    Classify the x solution using the preference model associated with the dm. 
+    This result of this classification is a integer vector : [ HSAT, SAT, DIS, HDIS ]
+    """
 
     def classify(self, x: Solution) -> List[int]:
         categories = [0, 0, 0, 0]
@@ -340,26 +348,107 @@ class InterClassNC:
 
         return categories
 
+    """
+    Def 18: DM is compatible with weighted-sum function model, The DM is said to be sat with a feasible S x iff 
+    the following conditions are fulfilled: i) For all w belonging to R1, x is alpha-preferred to w. ii) Theres is no 
+    z belonging to R2 such that z is alpha-preferred to x. 
+    """
+
     def _is_sat_uf(self, x: Solution, dm: int) -> bool:
-        pass
+        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        r1 = self.problem.instance_.attributes['r1'][dm]
+        for idx in range(len(r1)):
+            self.w.objectives = r1[idx]
+            if preference.compare(x, self.w) > -1:
+                return False
+        r2 = self.problem.instance_.attributes['r2'][dm]
+        count = 0
+        for idx in range(len(r2)):
+            self.w.objectives = r2[idx]
+            if preference.compare(self.w, x) == -1:
+                count += 1
+        return count == 0
+
+    """
+    Def 19: DM is compatible with weighted-sum function model, The DM is said to be dissatisfied with a feasible S 
+    x if at least one of the following conditions is fulfilled: i) For all w belonging to R2, w is alpha-pref to x; 
+    ii) There is no z belonging to R1 such that x is alpha-pref to z. 
+    """
 
     def _is_dis_uf(self, x: Solution, dm: int) -> bool:
-        pass
+        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        r2 = self.problem.instance_.attributes['r2'][dm]
+        count = 0
+        for idx in range(len(r2)):
+            self.w.objectives = r2[idx]
+            if preference.compare(self.w, x) == -1:
+                count += 1
+        if count == len(r2):
+            return True
+        r1 = self.problem.instance_.attributes['r1'][dm]
+        count = 0
+        for idx in range(len(r1)):
+            self.w.objectives = r1[idx]
+            if preference.compare(self.w, x) == -1:
+                count += 1
+        return count == 0
+
+    """
+     Def 20: If the DM is sat with x, we say that the DM is high sat with x iff the following condition is also 
+     fulfilled: - For all w belonging to R2, x is alpha-pref to w. 
+    """
 
     def _is_high_sat_uf(self, x: Solution, dm: int) -> bool:
-        pass
+        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        r2 = self.problem.instance_.attributes['r2'][dm]
+        for idx in range(len(r2)):
+            self.w.objectives = r2[idx]
+            if preference.compare(x, self.w) > -1:
+                return False
+        return True
+
+    """
+      Def 21: Suppose that the DM is dist with a S x, We say that the DM is highly dissatisfied with x if the 
+      following condition is also fulfilled - For all w belonging to R1, w is alpha-pref to x.
+    """
 
     def _is_high_dis_uf(self, x: Solution, dm: int) -> bool:
-        pass
+        preference = ITHDMPreferenceUF(self.problem.get_preference_model(dm))
+        r1 = self.problem.instance_.attributes['r1'][dm]
+        for idx in range(len(r1)):
+            self.w.objectives = r1[idx]
+            if preference.compare(self.w, x) > -1:
+                return False
+        return True
+
+    """
+    The DM is highly satisfied with a satisfactory x if for each w in R2 we have xPr(Beta,Lambda)w
+    """
 
     def _is_high_sat(self, x: Solution, dm: int) -> bool:
-        pass
+        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
+        r2 = self.problem.instance_.attributes['r2'][dm]
+        for idx in range(len(r2)):
+            self.w.objectives = r2[idx]
+            if preferences.compare(x, self.w) > -1:
+                return False
+        return True
+
+    """
+    The DM is strongly dissatisfied with x if for each w in R1 we have wP(Beta, Lambda)x.
+    """
 
     def _is_high_dis(self, x: Solution, dm: int) -> bool:
-        pass
+        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
+        r1 = self.problem.instance_.attributes['r1']
+        for idx in range(len(r1)):
+            self.w.objectives = r1[idx]
+            if preferences.compare(self.w, x) > -1:
+                return False
+        return True
 
     def _asc_rule(self, x: Solution, dm: int) -> int:
-        preferences = ITHDMPreferences(self.problem, self.problem.get_preference_model(dm))
+        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         category = -1
         for idx in range(len(r2)):
@@ -378,7 +467,7 @@ class InterClassNC:
         return category + len(r2)
 
     def _desc_rule(self, x: Solution, dm: int) -> int:
-        preferences = ITHDMPreferences(self.problem, self.problem.get_preference_model(dm))
+        preferences = ITHDMPreferences(self.problem.get_preference_model(dm))
         category = -1
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
