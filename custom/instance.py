@@ -8,7 +8,7 @@ from jmetal.core.solution import FloatSolution
 
 class Instance(ABC):
     def __init__(self):
-        self.attributes = {}
+        self.attributes = {'models': []}
         self.n_var = 0
         self.n_obj = 0
         self.n_constraints = 1

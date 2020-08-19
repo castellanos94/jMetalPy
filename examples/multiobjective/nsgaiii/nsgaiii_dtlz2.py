@@ -5,6 +5,7 @@ from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII, UniformReferenceDir
 from jmetal.lab.visualization import Plot
 from jmetal.operator import SBXCrossover, PolynomialMutation
 from jmetal.problem import DTLZ1
+from jmetal.problem.multiobjective.dtlz import DTLZ7
 from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.ranking import FastNonDominatedRanking
 from jmetal.util.solution import read_solutions
@@ -13,8 +14,8 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 if __name__ == '__main__':
     random.seed(8435)
 
-    problem = DTLZ1()
-    problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
+    problem = DTLZ7()
+    problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ7.3D.pf')
 
     max_evaluations = 25000
     experiment = 50
@@ -51,7 +52,7 @@ if __name__ == '__main__':
     # Save results to file
     print_solutions_to_file(front, DIRECTORY_RESULTS + 'front0.' + algorithm.label)
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT1', filename=DIRECTORY_RESULTS + 'NSGAII-ZDT1', format='png')
+    plot_front.plot(front, label='NSGAII-ZDT7', filename=DIRECTORY_RESULTS + 'NSGAII-ZDT7', format='png')
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${problem.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')

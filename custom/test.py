@@ -114,7 +114,9 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
 
 def test_classifier():
     psp_instance = PspIntervalInstance()
-    psp_instance.read_('/home/thinkpad/Documents/jemoa/src/main/resources/instances/gd/GD_ITHDM-UFCA.txt')
+    path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/gd/GD_ITHDM-UFCA.txt'
+    path = '/home/thinkpad/Dropbox/GDM/GroupDecision_202001/_instances/GD_ITHDM-UFCC.txt'
+    psp_instance.read_(path)
 
     problem = PortfolioSocialProblemGD(psp_instance)
     solutions = []
@@ -122,16 +124,22 @@ def test_classifier():
         s = problem.create_from_string(v)
         problem.evaluate(s)
         solutions.append(s)
-    for idx in range(10):
+    for idx in range(100):
         s = problem.create_solution()
         problem.evaluate(s)
         solutions.append(s)
     classifier = InterClassNC(problem)
     for s in solutions:
-        print(s.constraints, s.budget, classifier.classify(s))
+        classifier.classify(s)
 
 
 if __name__ == '__main__':
     random.seed(1)
     # dm_generator(4, 7, 4 * [Interval(0, 0.5)])
-    test_classifier()
+    #test_classifier()
+    instance = DTLZInstance()
+    path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/dtlz/DTLZInstance.txt'
+    instance.read_(path)
+    problem = DTLZ1Preferences(instance)
+    for _ in range(10):
+        print(problem.generate_solution().objectives)
