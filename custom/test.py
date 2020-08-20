@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences, PortfolioSocialProblemGD, DTLZ2P, DTLZ3P
+from custom.gd_problems import PortfolioSocialProblem, DTLZ1P, PortfolioSocialProblemGD
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
 from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise
@@ -53,7 +53,7 @@ def dtlz1_test():
     instance = DTLZInstance()
     path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/dtlz/DTLZInstance.txt'
     instance.read_(path)
-    problem = DTLZ1Preferences(instance)
+    problem = DTLZ1P(instance)
 
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
@@ -134,11 +134,12 @@ def test_classifier():
 
 
 if __name__ == '__main__':
-    #random.seed(1)
+    random.seed(1)
     instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
     instance.read_(path)
-    problem = DTLZ3P(instance)
+    problem = DTLZ1P(instance)
     looking_for_best = BestCompromise(problem)
-    front = looking_for_best.make()
+    best, front = looking_for_best.make()
+    print(best.variables, best.objectives, best.attributes['net_score'])
     print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem.get_name())

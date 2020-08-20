@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -233,9 +233,9 @@ class BestCompromise:
         self.dm = dm
         self.k = k
         self.preference = ITHDMPreferences(problem.objectives_type, problem.instance_.attributes['models'][dm])
-        self.ranking = ITHDMRanking(self.preference, [-2, -1], [2])
+        self.ranking = ITHDMRanking(self.preference, [-1], [-1])
 
-    def make(self) -> List[Solution]:
+    def make(self) -> Tuple[Solution, List[Solution]]:
         """returns candidate solutions
             Generates a sample of feasible solutions and compares them looking for an xPy or xSy relationship, finally orders the
             candidate solutions by crowding distance
@@ -248,5 +248,12 @@ class BestCompromise:
             if len(candidates) != 0:
                 bag += candidates[0]
         print('Candidates size: ', len(bag))
+        max_net_score = 0
+        best_compromise = None
+        for s in bag:
+            if max_net_score < s.attributes['net_score']:
+                max_net_score = s.attributes['net_score']
+                best_compromise = s
+
         CrowdingDistance().compute_density_estimator(bag)
-        return bag
+        return best_compromise, bag

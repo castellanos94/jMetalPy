@@ -65,15 +65,15 @@ class FloatProblemGD(GDProblem[FloatSolution], ABC):
         return new_solution
 
 
-class DTLZ1Preferences(FloatProblemGD):
-    """ Problem DTLZ1Preferences. Continuous problem having a flat Pareto front
+class DTLZ1P(FloatProblemGD):
+    """ Problem DTLZ1P. Continuous problem having a flat Pareto front
 
         """
 
     def __init__(self, instance_: DTLZInstance):
         """ :param instance_: define number_of_variables and objectives also initial solution
         """
-        super(DTLZ1Preferences, self).__init__(instance_)
+        super(DTLZ1P, self).__init__(instance_)
         self.obj_directions = [self.MINIMIZE] * self.number_of_objectives
         self.obj_labels = ['$ f_{} $'.format(index_var) for index_var in range(self.number_of_objectives)]
 
@@ -114,10 +114,10 @@ class DTLZ1Preferences(FloatProblemGD):
         return new_solution
 
     def get_name(self):
-        return 'DTLZ1Preferences'
+        return 'DTLZ1P'
 
 
-class DTLZ2P(DTLZ1Preferences):
+class DTLZ2P(DTLZ1P):
     """ Problem DTLZ2. Continuous problem having a convex Pareto front
 
     .. note:: Unconstrained problem. The default number of variables and objectives are, respectively, 12 and 3.
@@ -153,7 +153,7 @@ class DTLZ2P(DTLZ1Preferences):
         return 'DTLZ2P'
 
 
-class DTLZ3P(DTLZ1Preferences):
+class DTLZ3P(DTLZ1P):
     """ Problem DTLZ3. Continuous problem having a convex Pareto front
 
     .. note:: Unconstrained problem. The default number of variables and objectives are, respectively, 12 and 3.
@@ -194,7 +194,7 @@ class DTLZ3P(DTLZ1Preferences):
         return 'DTLZ3P'
 
 
-class DTLZ4P(DTLZ1Preferences):
+class DTLZ4P(DTLZ1P):
     """ Problem DTLZ4. Continuous problem having a convex Pareto front
 
     .. note:: Unconstrained problem. The default number of variables and objectives are, respectively, 12 and 3.
@@ -233,7 +233,7 @@ class DTLZ4P(DTLZ1Preferences):
         return 'DTLZ4P'
 
 
-class DTLZ5P(DTLZ1Preferences):
+class DTLZ5P(DTLZ1P):
     """ Problem DTLZ5. Continuous problem having a convex Pareto front
 
     .. note:: Unconstrained problem. The default number of variables and objectives are, respectively, 12 and 3.
@@ -277,7 +277,7 @@ class DTLZ5P(DTLZ1Preferences):
         return 'DTLZ5P'
 
 
-class DTLZ6P(DTLZ1Preferences):
+class DTLZ6P(DTLZ1P):
     """ Problem DTLZ6. Continuous problem having a convex Pareto front
 
     .. note:: Unconstrained problem. The default number of variables and objectives are, respectively, 12 and 3.
@@ -321,7 +321,7 @@ class DTLZ6P(DTLZ1Preferences):
         return 'DTLZ6P'
 
 
-class DTLZ7P(DTLZ1Preferences):
+class DTLZ7P(DTLZ1P):
     """ Problem DTLZ6. Continuous problem having a disconnected Pareto front
 
     .. note:: Unconstrained problem. The default number of variables and objectives are, respectively, 22 and 3.

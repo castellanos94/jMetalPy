@@ -321,21 +321,24 @@ class ITHDMRanking:
 
         # front[i] contains the list of solutions belonging to front i
         front = [[] for _ in range(len(solutions) + 1)]
-
+        count = 0
         for p in range(len(solutions) - 1):
-            for q in range(p + 1, len(solutions)):
+            for q in range(1, len(solutions)):
                 dominance_test_result = self.preferences.compare(solutions[p], solutions[q])
                 self.number_of_comparisons += 1
-
                 if dominance_test_result in self.a_pref:
+                    solutions[p].attributes['net_score'] = self.preferences.sigmaXY - self.preferences.sigmaYX
+                    count += 1
                     ith_dominated[p].append(q)
                     dominating_ith[q] += 1
                 elif dominance_test_result in self.b_pref:
+                    solutions[q].attributes['net_score'] = self.preferences.sigmaXY - self.preferences.sigmaYX
+                    count += 1
                     ith_dominated[q].append(p)
                     dominating_ith[p] += 1
 
         for i in range(len(solutions)):
-            if dominating_ith[i] == 0:
+            if dominating_ith[i] == 0 and 'net_score' in solutions[i].attributes.keys():
                 front[0].append(i)
                 solutions[i].attributes['dominance_ranking'] = 0
 
