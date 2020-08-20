@@ -6,6 +6,7 @@ from custom.gd_problems import GDProblem
 from custom.utils import ITHDMPreferences, ITHDMPreferenceUF
 from jmetal.algorithm.multiobjective.nsgaiii import ReferenceDirectionFactory
 from jmetal.core.solution import Solution
+from jmetal.util.density_estimator import CrowdingDistance
 
 
 class ReferenceDirectionFromSolution(ReferenceDirectionFactory):
@@ -217,3 +218,32 @@ class InterClassNC:
                 category = idx
                 break
         return category
+
+
+class BestCompromise:
+    def __init__(self, problem: GDProblem, sample_size=10000):
+        self.problem = problem
+        self.sample_size = sample_size
+        self.preference = ITHDMPreferences(problem.objectives_type, problem.instance_.attributes['models'][0])
+
+    def make(self) -> List[Solution]:
+        sample = [self.problem.generate_solution() for _ in range(self.sample_size)]
+        best_pref = 0
+        candidates = []
+        print('Check xPy in :', len(sample))
+        for a in range(self.sample_size - 1):
+            for b in range(1, self.sample_size):
+                value = self.preference.compare(sample[a], sample[b])
+                tmp = self.preference.sigmaXY - self.preference.sigmaYX
+                if value <= -1 and tmp >= best_pref and not sample[a] in candidates:
+                    best_pref = tmp
+                    candidates.append(sample[a])
+        print('Candidates size: ', len(candidates))
+        for a in range(len(candidates) - 1):
+            for b in range(1, len(candidates)):
+                value = self.preference.compare(candidates[a], candidates[b])
+                if value <= -1:
+                    del candidates[b]
+        print('After filtered : ', len(candidates))
+        CrowdingDistance().compute_density_estimator(candidates)
+        return candidates

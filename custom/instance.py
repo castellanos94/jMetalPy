@@ -157,6 +157,12 @@ class DTLZInstance(Instance):
                                          number_of_objectives=self.n_obj)
                 solution.variables = [float(line_split[i].replace(',', '')) for i in range(0, self.n_var)]
                 self.initial_solutions.append(solution)
+        self.attributes['dms'] = self.dms
+        models = []
+        for dm in range(self.dms):
+            model = OutrankingModel(self.weight[dm], self.veto[dm], 1.0, self.lambdas[dm], self.lambdas[dm], 1)
+            models.append(model)
+        self.attributes['models'] = models
 
 
 def clean_line(line: str) -> List[str]:

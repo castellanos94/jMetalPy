@@ -4,7 +4,7 @@ from typing import List
 from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences, PortfolioSocialProblemGD
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
-from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC
+from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
@@ -134,12 +134,11 @@ def test_classifier():
 
 
 if __name__ == '__main__':
-    random.seed(1)
-    # dm_generator(4, 7, 4 * [Interval(0, 0.5)])
-    #test_classifier()
+    #random.seed(1)
     instance = DTLZInstance()
-    path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/dtlz/DTLZInstance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
     instance.read_(path)
     problem = DTLZ1Preferences(instance)
-    for _ in range(10):
-        print(problem.generate_solution().objectives)
+    looking_for_best = BestCompromise(problem)
+    front = looking_for_best.make()
+    print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem.get_name())

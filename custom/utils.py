@@ -1,7 +1,7 @@
 import logging
 import os
 import random
-from typing import List
+from typing import List, Tuple
 
 from custom.interval import Interval
 from jmetal.core.solution import BinarySolution, Solution
@@ -100,7 +100,7 @@ class DMGenerator:
         self.numberOfVariables = number_of_variables
         self.maxObjectives = max_objectives
 
-    def make(self):
+    def make(self) -> Tuple[List[Interval], List[Interval]]:
         weights = self._generate_weights()
         veto = self._generate_veto(weights)
         return weights, veto
@@ -133,10 +133,18 @@ class DMGenerator:
             valid = True
             weight = self._butler_weight()
             if sum(weight) == 1.0:
-                for v in weight:
-                    if v > 0.5 * (1 - v):
+                if self.numberOfObjectives == 3:
+                    for _ in range(self.numberOfObjectives - 1):
+                        if weight[_] > 0.5 * (1 - weight[_]):
+                            valid = False
+                            break
+                    if weight[self.numberOfObjectives - 1] > 0.6 * (1 - weight[self.numberOfObjectives - 1]):
                         valid = False
-                        break
+                else:
+                    for v in weight:
+                        if v > 0.5 * (1 - v):
+                            valid = False
+                            break
             else:
                 valid = False
         return [Interval(w) for w in weight]
@@ -251,13 +259,13 @@ class ITHDMPreferences:
     def _discordance_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
         veto = self.preference_model.veto[criteria]
         if self.objectives_type[criteria]:
-            return y[criteria].poss_greater_than_or_eq(x[criteria] + veto)
-        return y[criteria].poss_smaller_than_or_eq(x[criteria] + veto)
+            return Interval(y[criteria]).poss_greater_than_or_eq(x[criteria] + veto)
+        return Interval(y[criteria]).poss_smaller_than_or_eq(x[criteria] + veto)
 
     def _alpha_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
         if self.objectives_type[criteria]:
-            return x[criteria].poss_greater_than_or_eq(y[criteria])
-        return x[criteria].poss_smaller_than_or_eq(y[criteria])
+            return Interval(x[criteria]).poss_greater_than_or_eq(y[criteria])
+        return Interval(x[criteria]).poss_smaller_than_or_eq(y[criteria])
 
 
 class ITHDMPreferenceUF:
@@ -284,6 +292,8 @@ class ITHDMPreferenceUF:
             uy += self.preference_model.weights[idx] * y.objectives[idx]
         if ux >= uy:
             return -1
+        if ux < uy:
+            return 1
         return 0
 
 
