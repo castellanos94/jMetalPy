@@ -40,12 +40,11 @@ class InterClassNC:
         self.w = self.problem.create_solution()
         self.w.constraints = [0.0 for _ in range(self.problem.number_of_constraints)]
 
-    """
-    Classify the x solution using the preference model associated with the dm. 
-    This result of this classification is a integer vector : [ HSAT, SAT, DIS, HDIS ]
-    """
-
     def classify(self, x: Solution) -> List[int]:
+        """
+           Classify the x solution using the preference model associated with the dm.
+           This result of this classification is a integer vector : [ HSAT, SAT, DIS, HDIS ]
+        """
         categories = [0, 0, 0, 0]
         for dm in range(self.problem.instance_.attributes['dms']):
             if not self.problem.get_preference_model(dm).supports_utility_function:
@@ -80,13 +79,12 @@ class InterClassNC:
                         categories[3] += 1
         return categories
 
-    """
-    Def 18: DM is compatible with weighted-sum function model, The DM is said to be sat with a feasible S x iff 
-    the following conditions are fulfilled: i) For all w belonging to R1, x is alpha-preferred to w. ii) Theres is no 
-    z belonging to R2 such that z is alpha-preferred to x. 
-    """
-
     def _is_sat_uf(self, x: Solution, dm: int) -> bool:
+        """
+            Def 18: DM is compatible with weighted-sum function model, The DM is said to be sat with a feasible S x iff
+            the following conditions are fulfilled: i) For all w belonging to R1, x is alpha-preferred to w. ii) Theres is no
+            z belonging to R2 such that z is alpha-preferred to x.
+            """
         preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
@@ -101,13 +99,13 @@ class InterClassNC:
                 count += 1
         return bool(count == 0)
 
-    """
-    Def 19: DM is compatible with weighted-sum function model, The DM is said to be dissatisfied with a feasible S 
-    x if at least one of the following conditions is fulfilled: i) For all w belonging to R2, w is alpha-pref to x; 
-    ii) There is no z belonging to R1 such that x is alpha-pref to z. 
-    """
-
     def _is_dis_uf(self, x: Solution, dm: int) -> bool:
+        """
+           Def 19: DM is compatible with weighted-sum function model, The DM is said to be dissatisfied with a feasible S
+           x if at least one of the following conditions is fulfilled: i) For all w belonging to R2, w is alpha-pref to x;
+           ii) There is no z belonging to R1 such that x is alpha-pref to z.
+           """
+
         preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         count = 0
@@ -125,12 +123,11 @@ class InterClassNC:
                 count += 1
         return bool(count == 0)
 
-    """
-     Def 20: If the DM is sat with x, we say that the DM is high sat with x iff the following condition is also 
-     fulfilled: - For all w belonging to R2, x is alpha-pref to w. 
-    """
-
     def _is_high_sat_uf(self, x: Solution, dm: int) -> bool:
+        """
+             Def 20: If the DM is sat with x, we say that the DM is high sat with x iff the following condition is also
+             fulfilled: - For all w belonging to R2, x is alpha-pref to w.
+            """
         preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         for idx in range(len(r2)):
@@ -139,12 +136,11 @@ class InterClassNC:
                 return False
         return True
 
-    """
-      Def 21: Suppose that the DM is dist with a S x, We say that the DM is highly dissatisfied with x if the 
-      following condition is also fulfilled - For all w belonging to R1, w is alpha-pref to x.
-    """
-
     def _is_high_dis_uf(self, x: Solution, dm: int) -> bool:
+        """
+              Def 21: Suppose that the DM is dist with a S x, We say that the DM is highly dissatisfied with x if the
+              following condition is also fulfilled - For all w belonging to R1, w is alpha-pref to x.
+        """
         preference = ITHDMPreferenceUF(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
@@ -153,11 +149,10 @@ class InterClassNC:
                 return False
         return True
 
-    """
-    The DM is highly satisfied with a satisfactory x if for each w in R2 we have xPr(Beta,Lambda)w
-    """
-
     def _is_high_sat(self, x: Solution, dm: int) -> bool:
+        """
+           The DM is highly satisfied with a satisfactory x if for each w in R2 we have xPr(Beta,Lambda)w
+        """
         preferences = ITHDMPreferences(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r2 = self.problem.instance_.attributes['r2'][dm]
         for idx in range(len(r2)):
@@ -166,11 +161,10 @@ class InterClassNC:
                 return False
         return True
 
-    """
-    The DM is strongly dissatisfied with x if for each w in R1 we have wP(Beta, Lambda)x.
-    """
-
     def _is_high_dis(self, x: Solution, dm: int) -> bool:
+        """
+            The DM is strongly dissatisfied with x if for each w in R1 we have wP(Beta, Lambda)x.
+        """
         preferences = ITHDMPreferences(self.problem.objectives_type, self.problem.get_preference_model(dm))
         r1 = self.problem.instance_.attributes['r1'][dm]
         for idx in range(len(r1)):
@@ -221,12 +215,21 @@ class InterClassNC:
 
 
 class BestCompromise:
-    def __init__(self, problem: GDProblem, sample_size=10000):
+    """
+    Looking for a best compromise in a solution sample using the dm preferences
+    """
+
+    def __init__(self, problem: GDProblem, sample_size=10000, dm: int = 0):
         self.problem = problem
         self.sample_size = sample_size
-        self.preference = ITHDMPreferences(problem.objectives_type, problem.instance_.attributes['models'][0])
+        self.dm = dm
+        self.preference = ITHDMPreferences(problem.objectives_type, problem.instance_.attributes['models'][dm])
 
     def make(self) -> List[Solution]:
+        """returns candidate solutions
+            Generates a sample of feasible solutions and compares them looking for an xPy or xSy relationship, finally orders the
+            candidate solutions by crowding distance
+        """
         sample = [self.problem.generate_solution() for _ in range(self.sample_size)]
         best_pref = 0
         candidates = []
