@@ -1,7 +1,6 @@
-import random
 from typing import List
 
-from custom.gd_problems import PortfolioSocialProblem, DTLZ1P, PortfolioSocialProblemGD
+from custom.gd_problems import PortfolioSocialProblem, DTLZ1P, PortfolioSocialProblemGD, GDProblem, DTLZ7P
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
 from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise
@@ -133,13 +132,17 @@ def test_classifier():
         classifier.classify(s)
 
 
-if __name__ == '__main__':
-    random.seed(1)
-    instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
-    instance.read_(path)
-    problem = DTLZ1P(instance)
-    looking_for_best = BestCompromise(problem)
-    best, front = looking_for_best.make()
+def looking_for_compromise(problem_: GDProblem, sample_size: int = 1000, k: int = 101):
+    search = BestCompromise(problem_, sample_size=sample_size, k=k)
+    best, front = search.make()
+    print('Best compromise')
     print(best.variables, best.objectives, best.attributes['net_score'])
-    print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem.get_name())
+    print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem_.get_name())
+
+
+if __name__ == '__main__':
+    # random.seed(1)
+    instance = DTLZInstance()
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
+    instance.read_(path)
+    looking_for_compromise(DTLZ7P(instance), sample_size=3000)

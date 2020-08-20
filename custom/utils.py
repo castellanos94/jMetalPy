@@ -337,35 +337,12 @@ class ITHDMRanking:
                     ith_dominated[q].append(p)
                     dominating_ith[p] += 1
 
+        self.ranked_sublists = []
         for i in range(len(solutions)):
             if dominating_ith[i] == 0 and 'net_score' in solutions[i].attributes.keys():
-                front[0].append(i)
                 solutions[i].attributes['dominance_ranking'] = 0
+                front[0].append(solutions[i])
 
-        i = 0
-        while len(front[i]) != 0:
-            i += 1
-            for p in front[i - 1]:
-                if p <= len(ith_dominated):
-                    for q in ith_dominated[p]:
-                        dominating_ith[q] -= 1
-                        if dominating_ith[q] == 0:
-                            front[i].append(q)
-                            solutions[q].attributes['dominance_ranking'] = i
-
-        self.ranked_sublists = [[]] * i
-        for j in range(i):
-            q = [0] * len(front[j])
-            for m in range(len(front[j])):
-                q[m] = solutions[front[j][m]]
-            self.ranked_sublists[j] = q
-
-        if k:
-            count = 0
-            for i, front in enumerate(self.ranked_sublists):
-                count += len(front)
-                if count >= k:
-                    self.ranked_sublists = self.ranked_sublists[:i + 1]
-                    break
-
+        if len(front[0]) > 0:
+            self.ranked_sublists.append(front[0])
         return self.ranked_sublists

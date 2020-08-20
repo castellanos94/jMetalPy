@@ -237,8 +237,8 @@ class BestCompromise:
 
     def make(self) -> Tuple[Solution, List[Solution]]:
         """returns candidate solutions
-            Generates a sample of feasible solutions and compares them looking for an xPy or xSy relationship, finally orders the
-            candidate solutions by crowding distance
+        Generates a sample of feasible solutions and compares them looking for an xPy
+        or xSy relationship, finally orders the candidate solutions by crowding distance
         """
         bag = []
         while len(bag) < self.k:
@@ -254,6 +254,6 @@ class BestCompromise:
             if max_net_score < s.attributes['net_score']:
                 max_net_score = s.attributes['net_score']
                 best_compromise = s
-
+        bag.remove(best_compromise)
         CrowdingDistance().compute_density_estimator(bag)
-        return best_compromise, bag
+        return best_compromise, [best_compromise] + bag

@@ -114,7 +114,7 @@ class DTLZ1P(FloatProblemGD):
         return new_solution
 
     def get_name(self):
-        return 'DTLZ1P'
+        return 'DTLZ1P_' + str(self.number_of_objectives)
 
 
 class DTLZ2P(DTLZ1P):
@@ -150,7 +150,7 @@ class DTLZ2P(DTLZ1P):
         return solution
 
     def get_name(self):
-        return 'DTLZ2P'
+        return 'DTLZ2P_' + str(self.number_of_objectives)
 
 
 class DTLZ3P(DTLZ1P):
@@ -191,7 +191,7 @@ class DTLZ3P(DTLZ1P):
         return solution
 
     def get_name(self):
-        return 'DTLZ3P'
+        return 'DTLZ3P_' + str(self.number_of_objectives)
 
 
 class DTLZ4P(DTLZ1P):
@@ -230,7 +230,7 @@ class DTLZ4P(DTLZ1P):
         return solution
 
     def get_name(self):
-        return 'DTLZ4P'
+        return 'DTLZ4P_' + str(self.number_of_objectives)
 
 
 class DTLZ5P(DTLZ1P):
@@ -274,7 +274,7 @@ class DTLZ5P(DTLZ1P):
         return solution
 
     def get_name(self):
-        return 'DTLZ5P'
+        return 'DTLZ5P_' + str(self.number_of_objectives)
 
 
 class DTLZ6P(DTLZ1P):
@@ -318,7 +318,7 @@ class DTLZ6P(DTLZ1P):
         return solution
 
     def get_name(self):
-        return 'DTLZ6P'
+        return 'DTLZ6P_' + str(self.number_of_objectives)
 
 
 class DTLZ7P(DTLZ1P):
@@ -352,7 +352,7 @@ class DTLZ7P(DTLZ1P):
         return solution
 
     def get_name(self):
-        return 'DTLZ7P'
+        return 'DTLZ7P_' + str(self.number_of_objectives)
 
 
 class PortfolioSocialProblem(BinaryProblemGD):
