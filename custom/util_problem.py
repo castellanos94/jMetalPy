@@ -3,14 +3,22 @@ from typing import List
 import numpy as np
 
 from custom.gd_problems import GDProblem
-from custom.utils import ITHDMPreferences, ITHDMPreferenceUF
+from custom.utils import ITHDMPreferences, ITHDMPreferenceUF, ITHDMRanking
 from jmetal.algorithm.multiobjective.nsgaiii import ReferenceDirectionFactory
 from jmetal.core.solution import Solution
 from jmetal.util.density_estimator import CrowdingDistance
 
 
 class ReferenceDirectionFromSolution(ReferenceDirectionFactory):
+    """
+    Helper to create references points from initial solutions defined in the problem instance
+    """
+
     def __init__(self, problem: GDProblem, normalize: bool = False):
+        """
+            :param problem: problem with instance associate
+            :param normalize: objectives of initial solutions
+         """
         super(ReferenceDirectionFromSolution, self).__init__(n_dim=problem.number_of_objectives)
         self.problem = problem
         self.instance = problem.instance_
@@ -219,34 +227,26 @@ class BestCompromise:
     Looking for a best compromise in a solution sample using the dm preferences
     """
 
-    def __init__(self, problem: GDProblem, sample_size=10000, dm: int = 0):
+    def __init__(self, problem: GDProblem, sample_size=1000, dm: int = 0, k: int = 20):
         self.problem = problem
         self.sample_size = sample_size
         self.dm = dm
+        self.k = k
         self.preference = ITHDMPreferences(problem.objectives_type, problem.instance_.attributes['models'][dm])
+        self.ranking = ITHDMRanking(self.preference, [-2, -1], [2])
 
     def make(self) -> List[Solution]:
         """returns candidate solutions
             Generates a sample of feasible solutions and compares them looking for an xPy or xSy relationship, finally orders the
             candidate solutions by crowding distance
         """
-        sample = [self.problem.generate_solution() for _ in range(self.sample_size)]
-        best_pref = 0
-        candidates = []
-        print('Check xPy in :', len(sample))
-        for a in range(self.sample_size - 1):
-            for b in range(1, self.sample_size):
-                value = self.preference.compare(sample[a], sample[b])
-                tmp = self.preference.sigmaXY - self.preference.sigmaYX
-                if value <= -1 and tmp >= best_pref and not sample[a] in candidates:
-                    best_pref = tmp
-                    candidates.append(sample[a])
-        print('Candidates size: ', len(candidates))
-        for a in range(len(candidates) - 1):
-            for b in range(1, len(candidates)):
-                value = self.preference.compare(candidates[a], candidates[b])
-                if value <= -1:
-                    del candidates[b]
-        print('After filtered : ', len(candidates))
-        CrowdingDistance().compute_density_estimator(candidates)
-        return candidates
+        bag = []
+        while len(bag) < self.k:
+            print('Check xPy inner :', len(bag))
+            sample = [self.problem.generate_solution() for _ in range(self.sample_size)]
+            candidates = self.ranking.compute_ranking(sample)
+            if len(candidates) != 0:
+                bag += candidates[0]
+        print('Candidates size: ', len(bag))
+        CrowdingDistance().compute_density_estimator(bag)
+        return bag

@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences, PortfolioSocialProblemGD
+from custom.gd_problems import PortfolioSocialProblem, DTLZ1Preferences, PortfolioSocialProblemGD, DTLZ2P, DTLZ3P
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
 from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise
@@ -136,9 +136,9 @@ def test_classifier():
 if __name__ == '__main__':
     #random.seed(1)
     instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
     instance.read_(path)
-    problem = DTLZ1Preferences(instance)
+    problem = DTLZ3P(instance)
     looking_for_best = BestCompromise(problem)
     front = looking_for_best.make()
     print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem.get_name())

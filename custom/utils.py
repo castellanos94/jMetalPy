@@ -186,16 +186,19 @@ class ITHDMPreferences:
         self.objectives_type = objectives_type
         self.dominance_comparator = ITHDMDominanceComparator(objectives_type, preference_model.alpha)
 
-    """
-        Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
-    """
-
     def compare(self, x: Solution, y: Solution) -> int:
+        """
+            Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
+            yS(δ,λ)x in 2
+        """
         self.coalition = [None for _ in range(x.number_of_objectives)]
         self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
         self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
-        if self.dominance_comparator.compare(x, y) == -1:
+        value = self.dominance_comparator.compare(x, y)
+        if value == -1:
             return -2
+        if value == 1:
+            return 2
         if self.sigmaXY >= self.preference_model.beta > self.sigmaYX:
             return -1
         if self.sigmaXY >= self.preference_model.beta and self.sigmaYX >= self.preference_model.beta:
@@ -278,11 +281,10 @@ class ITHDMPreferenceUF:
         self.objectives_type = objectives_type
         self.dominance_comparator = ITHDMDominanceComparator(objectives_type, preference_model.alpha)
 
-    """
-    -1 if xPy, 0 if x~y, 1 otherwise
-    """
-
     def compare(self, x: Solution, y: Solution) -> int:
+        """
+            -1 if xPy, 0 if x~y, 1 otherwise
+        """
         if self.dominance_comparator.compare(x, y) == -1:
             return -1
         ux = Interval(0)
@@ -297,6 +299,70 @@ class ITHDMPreferenceUF:
         return 0
 
 
-class BestCompromiseDTLZ:
-    def __init__(self):
-        pass
+class ITHDMRanking:
+
+    def __init__(self, preferences, a_pref: List[int], b_pref: List[int]):
+        self.preferences = preferences
+        self.number_of_comparisons = 0
+        self.a_pref = a_pref
+        self.b_pref = b_pref
+
+    def compute_ranking(self, solutions: List[Solution], k: int = None):
+        """ Compute ranking of solutions.
+
+        :param solutions: Solution list.
+        :param k: Number of individuals.
+        """
+        # number of solutions dominating solution ith
+        dominating_ith = [0 for _ in range(len(solutions))]
+
+        # list of solutions dominated by solution ith
+        ith_dominated = [[] for _ in range(len(solutions))]
+
+        # front[i] contains the list of solutions belonging to front i
+        front = [[] for _ in range(len(solutions) + 1)]
+
+        for p in range(len(solutions) - 1):
+            for q in range(p + 1, len(solutions)):
+                dominance_test_result = self.preferences.compare(solutions[p], solutions[q])
+                self.number_of_comparisons += 1
+
+                if dominance_test_result in self.a_pref:
+                    ith_dominated[p].append(q)
+                    dominating_ith[q] += 1
+                elif dominance_test_result in self.b_pref:
+                    ith_dominated[q].append(p)
+                    dominating_ith[p] += 1
+
+        for i in range(len(solutions)):
+            if dominating_ith[i] == 0:
+                front[0].append(i)
+                solutions[i].attributes['dominance_ranking'] = 0
+
+        i = 0
+        while len(front[i]) != 0:
+            i += 1
+            for p in front[i - 1]:
+                if p <= len(ith_dominated):
+                    for q in ith_dominated[p]:
+                        dominating_ith[q] -= 1
+                        if dominating_ith[q] == 0:
+                            front[i].append(q)
+                            solutions[q].attributes['dominance_ranking'] = i
+
+        self.ranked_sublists = [[]] * i
+        for j in range(i):
+            q = [0] * len(front[j])
+            for m in range(len(front[j])):
+                q[m] = solutions[front[j][m]]
+            self.ranked_sublists[j] = q
+
+        if k:
+            count = 0
+            for i, front in enumerate(self.ranked_sublists):
+                count += len(front)
+                if count >= k:
+                    self.ranked_sublists = self.ranked_sublists[:i + 1]
+                    break
+
+        return self.ranked_sublists
