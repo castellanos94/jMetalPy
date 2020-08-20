@@ -1,6 +1,6 @@
 from typing import List
 
-from custom.gd_problems import PortfolioSocialProblem, DTLZ1P, PortfolioSocialProblemGD, GDProblem, DTLZ7P
+from custom.gd_problems import PortfolioSocialProblem, DTLZ1P, PortfolioSocialProblemGD, GDProblem, DTLZ2P
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
 from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise
@@ -48,16 +48,16 @@ def psp_test():
     print('Computing time: ' + str(algorithm.total_computing_time))
 
 
-def dtlz1_test():
+def dtlz_test():
     instance = DTLZInstance()
-    path = '/home/thinkpad/Documents/jemoa/src/main/resources/instances/dtlz/DTLZInstance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
     instance.read_(path)
-    problem = DTLZ1P(instance)
+    problem = DTLZ2P(instance)
 
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
     max_evaluations = 25000
-    experiment = 30
+    experiment = 50
     algorithm = NSGAIII(
         problem=problem,
         population_size=100,
@@ -95,7 +95,7 @@ def dtlz1_test():
     print(f'Problem: ${problem.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename=DIRECTORY_RESULTS + 'NSGAII-ZDT1-p_f0',
+    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename=DIRECTORY_RESULTS + 'f0_'+algorithm.label,
                     format='png')
 
 
@@ -141,8 +141,9 @@ def looking_for_compromise(problem_: GDProblem, sample_size: int = 1000, k: int 
 
 
 if __name__ == '__main__':
-    # random.seed(1)
-    instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
-    instance.read_(path)
-    looking_for_compromise(DTLZ7P(instance), sample_size=3000)
+# random.seed(1)
+# instance = DTLZInstance()
+# path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
+# instance.read_(path)
+# looking_for_compromise(DTLZ7P(instance), sample_size=3000)
+    dtlz_test()

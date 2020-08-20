@@ -29,7 +29,6 @@ class ReferenceDirectionFromSolution(ReferenceDirectionFactory):
         for s in self.instance.initial_solutions:
             self.problem.evaluate(s)
             ref_dir.append(np.array(s.objectives))
-        print(ref_dir)
         if self.normalize:
             min_f, max_f = np.min(ref_dir), np.max(ref_dir)
             norm = max_f - min_f
