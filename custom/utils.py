@@ -192,13 +192,18 @@ class ITHDMPreferences:
             yS(δ,λ)x in 2
         """
         self.coalition = [None for _ in range(x.number_of_objectives)]
-        self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
-        self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
+
         value = self.dominance_comparator.compare(x, y)
         if value == -1:
+            self.sigmaXY = 1
+            self.sigmaYX = 0
             return -2
         if value == 1:
+            self.sigmaXY = 0
+            self.sigmaYX = 1
             return 2
+        self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
+        self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
         if self.sigmaXY >= self.preference_model.beta > self.sigmaYX:
             return -1
         if self.sigmaXY >= self.preference_model.beta and self.sigmaYX >= self.preference_model.beta:
@@ -332,7 +337,7 @@ class ITHDMRanking:
                     ith_dominated[p].append(q)
                     dominating_ith[q] += 1
                 elif dominance_test_result in self.b_pref:
-                    solutions[q].attributes['net_score'] = self.preferences.sigmaXY - self.preferences.sigmaYX
+                    solutions[q].attributes['net_score'] = self.preferences.sigmaYX - self.preferences.sigmaXY
                     count += 1
                     ith_dominated[q].append(p)
                     dominating_ith[p] += 1
