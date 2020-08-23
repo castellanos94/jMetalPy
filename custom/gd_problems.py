@@ -1,7 +1,7 @@
 import random
-from abc import ABC
+from abc import ABC, abstractmethod
 from math import pi, cos, sin
-from typing import TypeVar
+from typing import TypeVar, List
 
 from custom.instance import DTLZInstance, Instance, PspInstance
 from custom.interval import Interval
@@ -24,6 +24,10 @@ class GDProblem(Problem[S], ABC):
     def get_preference_model(self, dm: int):
         return self.models[dm]
 
+    @abstractmethod
+    def generate_existing_solution(self, variables) -> [S]:
+        pass
+
 
 class BinaryProblemGD(GDProblem[BinarySolution], ABC):
     """ Class representing binary problems. """
@@ -41,6 +45,15 @@ class BinaryProblemGD(GDProblem[BinarySolution], ABC):
             [True if random.randint(0, 1) == 0 else False for _ in range(
                 self.number_of_bits)]
 
+        return new_solution
+
+    def generate_existing_solution(self, variables: str) -> BinarySolution:
+        new_solution = BinarySolution(number_of_variables=self.number_of_variables,
+                                      number_of_objectives=self.number_of_objectives)
+        new_solution.variables[0] = \
+            [True if variables[_] == '1' else False for _ in range(
+                self.number_of_bits)]
+        self.evaluate(new_solution)
         return new_solution
 
 
@@ -62,6 +75,16 @@ class FloatProblemGD(GDProblem[FloatSolution], ABC):
             [random.uniform(self.lower_bound[index_var] * 1.0, self.upper_bound[index_var] * 1.0) for index_var in
              range(self.number_of_variables)]
 
+        return new_solution
+
+    def generate_existing_solution(self, variables: List[float]) -> FloatSolution:
+        new_solution = FloatSolution(
+            self.lower_bound,
+            self.upper_bound,
+            self.number_of_objectives,
+            self.number_of_constraints)
+        new_solution.variables = [variables[index_var] for index_var in range(self.number_of_variables)]
+        self.evaluate(new_solution)
         return new_solution
 
 

@@ -1,9 +1,9 @@
 from typing import List
 
-from custom.gd_problems import PortfolioSocialProblem, DTLZ1P, PortfolioSocialProblemGD, GDProblem, DTLZ2P
+from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem, DTLZ2P
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
-from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise
+from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise, ReferenceSetITHDM
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII
@@ -95,7 +95,7 @@ def dtlz_test():
     print(f'Problem: ${problem.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename=DIRECTORY_RESULTS + 'f0_'+algorithm.label,
+    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename=DIRECTORY_RESULTS + 'f0_' + algorithm.label,
                     format='png')
 
 
@@ -141,9 +141,12 @@ def looking_for_compromise(problem_: GDProblem, sample_size: int = 1000, k: int 
 
 
 if __name__ == '__main__':
-# random.seed(1)
-# instance = DTLZInstance()
-# path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ2_Instance.txt'
-# instance.read_(path)
-# looking_for_compromise(DTLZ7P(instance), sample_size=3000)
-    dtlz_test()
+    # random.seed(1)
+    psp_instance = PspIntervalInstance()
+    path = '/home/thinkpad/Dropbox/GDM/GroupDecision_202001/_instances/GD_ITHDM-UFCB.txt'
+    psp_instance.read_(path)
+
+    problem = PortfolioSocialProblemGD(psp_instance)
+    reference_set_outranking = ReferenceSetITHDM(problem)
+    reference_set_outranking.compute()
+    #  dtlz_test()

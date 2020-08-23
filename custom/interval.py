@@ -10,23 +10,18 @@ class Interval:
 
     def __init__(self, lower, upper=None):
         if isinstance(lower, Interval):
-            self.lower = lower.lower
-            self.upper = lower.upper
+            self.lower = float(lower.lower)
+            self.upper = float(lower.upper)
         else:
-            self.lower = lower
-        if upper is None:
-            self.upper = lower
-        else:
-            self.upper = upper
+            self.lower = float(lower)
+            if upper is None:
+                self.upper = float(lower)
+            else:
+                self.upper = float(upper)
 
-        if type(self.upper) == str:
-            self.lower = float(self.lower)
-        if type(self.upper) == str:
-            self.upper = float(self.upper)
-
-        if self.lower > self.upper:
-            pass
-            #print('interval invalid')
+            if self.lower > self.upper:
+                pass
+                # print('interval invalid')
 
     def __add__(self, other):
         if isinstance(other, (float, int)):

@@ -269,6 +269,7 @@ class PspIntervalInstance(PspInstance):
         if line[0] == "TRUE":
             r2_set = []
             r1_set = []
+            frontiers = []
             for dm in range(self.attributes['dms']):
                 index += 1
                 line = clean_line(content[index])
@@ -295,5 +296,7 @@ class PspIntervalInstance(PspInstance):
                     r1.append(r1_)
                 r2_set.append(r2)
                 r1_set.append(r1)
+                frontiers.append(r2 + r1)
+            self.attributes['frontiers'] = frontiers
             self.attributes['r2'] = r2_set
             self.attributes['r1'] = r1_set

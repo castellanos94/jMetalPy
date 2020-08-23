@@ -50,14 +50,27 @@ class ITHDMDominanceComparator(DominanceComparator):
         self.alpha = alpha
         self.objectives_type = objectives_type
 
-    def __dominance_test(self, solution1: Solution, solution2: Solution) -> float:
+    def compare(self, solution1: Solution, solution2: Solution) -> int:
+        if solution1 is None:
+            raise Exception("The solution1 is None")
+        elif solution2 is None:
+            raise Exception("The solution2 is None")
+
+        result = self.constraint_comparator.compare(solution1, solution2)
+        if result == 0:
+            result = self.dominance_test_(solution1.objectives, solution2.objectives)
+            # result = self.dominance_test(solution1.objectives, solution2.objectives)
+
+        return result
+
+    def dominance_test_(self, solution1: List, solution2: List) -> float:
         best_is_one = 0
         best_is_two = 0
         value1_strictly_greater = False
         value2_strictly_greater = False
-        for i in range(solution1.number_of_objectives):
-            value1 = Interval(solution1.objectives[i])
-            value2 = Interval(solution2.objectives[i])
+        for i in range(len(solution1)):
+            value1 = Interval(solution1[i])
+            value2 = Interval(solution2[i])
             if self.objectives_type[i]:
                 poss = value1.possibility(value2)
             else:
@@ -74,10 +87,9 @@ class ITHDMDominanceComparator(DominanceComparator):
                 if not value2_strictly_greater and poss > 0.5:
                     value2_strictly_greater = True
                 best_is_two += 1
-
-        if value1_strictly_greater and best_is_one == solution1.number_of_variables:
+        if value1_strictly_greater and best_is_one == len(solution1):
             return -1
-        if value2_strictly_greater and best_is_two == solution1.number_of_variables:
+        if value2_strictly_greater and best_is_two == len(solution1):
             return 1
         return 0
 
@@ -191,9 +203,12 @@ class ITHDMPreferences:
             Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
             yS(δ,λ)x in 2
         """
-        self.coalition = [None for _ in range(x.number_of_objectives)]
+        return self.compare_(x.objectives, y.objectives)
 
-        value = self.dominance_comparator.compare(x, y)
+    def compare_(self, x: List[Interval], y: List[Interval]) -> int:
+        self.coalition = [None for _ in range(len(x))]
+
+        value = self.dominance_comparator.dominance_test_(x, y)
         if value == -1:
             self.sigmaXY = 1
             self.sigmaYX = 0
@@ -202,8 +217,8 @@ class ITHDMPreferences:
             self.sigmaXY = 0
             self.sigmaYX = 1
             return 2
-        self.sigmaXY = self._credibility_index(x.objectives, y.objectives)
-        self.sigmaYX = self._credibility_index(y.objectives, x.objectives)
+        self.sigmaXY = self._credibility_index(x, y)
+        self.sigmaYX = self._credibility_index(y, x)
         if self.sigmaXY >= self.preference_model.beta > self.sigmaYX:
             return -1
         if self.sigmaXY >= self.preference_model.beta and self.sigmaYX >= self.preference_model.beta:
