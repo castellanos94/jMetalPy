@@ -262,6 +262,10 @@ class BestCompromise:
 
 class ReferenceSetITHDM:
     def __init__(self, problem_: GDProblem):
+        """
+        Conjuntos de references para InterClass-nC
+        :NOTE: Solo para problemas de maximizacion, en caso de minimizacion se tendria que sumar para crear r1
+        """
         self.problem_ = problem_
         self.instance_ = self.problem_.instance_
 
@@ -273,25 +277,32 @@ class ReferenceSetITHDM:
                 return False
         return True
 
+    @staticmethod
+    def check_assumption_74(w: List[Interval], z: List[List[Interval]], pref) -> bool:
+        for idx in range(len(z)):
+            v = pref.compare_(w, z[idx])
+            if v != 1:
+                return False
+        return True
+
     def compute(self):
         dms = self.instance_.attributes['dms'] if 'dms' else 1 in self.instance_.attributes.keys()
         frontiers_objectives = self.instance_.attributes['frontiers']
+
         for dm in range(dms):
+            best_compromise = self.problem_.generate_existing_solution(self.instance_.attributes['best_compromise'][dm])
+            print('best compromise')
+            print(best_compromise.objectives)
+            dif_ideal_front = []
+            r2 = [[]]
+            r1 = [[]]
+            for idx in range(self.problem_.number_of_objectives):
+                v = Interval(best_compromise.objectives[idx] - frontiers_objectives[dm][0][idx])
+                dif_ideal_front.append(v.midpoint())
+            print(dif_ideal_front)
+            dominance = ITHDMDominanceComparator(self.problem_.objectives_type,
+                                                 self.problem_.get_preference_model(dm).alpha)
             if not self.problem_.get_preference_model(dm).supports_utility_function:
-                best_compromise = self.problem_.generate_existing_solution(
-                    self.instance_.attributes['best_compromise'][dm])
-                dif_ideal_front = []
-                for idx in range(self.problem_.number_of_objectives):
-                    v = Interval(best_compromise.objectives[idx] - frontiers_objectives[dm][0][idx])
-                    # malo = Interval(min(abs(v.lower), abs(v.upper)), max(abs(v.lower), abs(v.upper)))
-                    dif_ideal_front.append(v.midpoint())
-                print(dif_ideal_front)
-                dominance = ITHDMDominanceComparator(self.problem_.objectives_type,
-                                                     self.problem_.get_preference_model(dm).alpha)
-                r2 = [3 * []]
-                r1 = [3 * []]
-                print('best compromise')
-                print(best_compromise.objectives)
                 # Step 1:
                 for idx in range(self.problem_.number_of_objectives):
                     r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 2.0))
@@ -353,4 +364,42 @@ class ReferenceSetITHDM:
                     jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
                 print(str(r1[2]).replace('[', '').replace(']', ''))
             else:
-                print(dm)
+                # Step 1:
+                for idx in range(self.problem_.number_of_objectives):
+                    r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 2.0))
+                pref = ITHDMPreferenceUF(self.problem_.objectives_type, self.problem_.get_preference_model(dm))
+                while dominance.dominance_test_(best_compromise.objectives, r2[0]) != -1:
+                    for idx in range(self.problem_.number_of_objectives):
+                        r2[0][idx] -= dif_ideal_front[idx] / 3
+                print('6 // UF: R2(3) + R1(3)')
+                print(str(r2[0]).replace('[', '').replace(']', ''))
+                r2 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r2[0])]]
+                while dominance.dominance_test_(best_compromise.objectives, r2[0]) != -1 and pref.compare_(r2[1],
+                                                                                                           r2[0]) != 0:
+                    for idx in range(self.problem_.number_of_objectives):
+                        r2[1][idx] -= dif_ideal_front[idx] / 3
+
+                print(str(r2[1]).replace('[', '').replace(']', ''))
+                r2 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r2[1])]]
+                while dominance.dominance_test_(best_compromise.objectives, r2[1]) != -1 and \
+                        pref.compare_(r2[2], r2[0]) != 0 and pref.compare_(r2[2], r2[1]) != 0:
+                    for idx in range(self.problem_.number_of_objectives):
+                        r2[1][idx] -= dif_ideal_front[idx] / 3
+
+                print(str(r2[2]).replace('[', '').replace(']', ''))
+                r1[0] = [v - dif_ideal_front[idx] for idx, v in enumerate(r2[2])]
+                while not self.check_assumption_74(r1[0], r2, pref):
+                    for idx in range(self.problem_.number_of_objectives):
+                        r1[0] -= dif_ideal_front[idx] / 3
+                print(str(r1[0]).replace('[', '').replace(']', ''))
+                r1 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r1[0])]]
+                while not self.check_assumption_74(r1[1], r2, pref) and pref.compare_(r1[0], r1[1]) != 0:
+                    for idx in range(self.problem_.number_of_objectives):
+                        r1[1] -= dif_ideal_front[idx] / 3
+                print(str(r1[1]).replace('[', '').replace(']', ''))
+                r1 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r1[1])]]
+                while not self.check_assumption_74(r1[2], r2, pref) and pref.compare_(r1[0], r1[2]) != 0 and \
+                        pref.compare_(r1[1], r1[2]) != 0:
+                    for idx in range(self.problem_.number_of_objectives):
+                        r1[2] -= dif_ideal_front[idx] / 3
+                print(str(r1[2]).replace('[', '').replace(']', ''))

@@ -318,6 +318,23 @@ class ITHDMPreferenceUF:
             return 1
         return 0
 
+    def compare_(self, x: List, y: List) -> int:
+        """
+                    -1 if xPy, 0 if x~y, 1 otherwise
+                """
+        if self.dominance_comparator.dominance_test_(x, y) == -1:
+            return -1
+        ux = Interval(0)
+        uy = Interval(0)
+        for idx in range(len(x)):
+            ux += self.preference_model.weights[idx] * x[idx]
+            uy += self.preference_model.weights[idx] * y[idx]
+        if ux >= uy:
+            return -1
+        if ux < uy:
+            return 1
+        return 0
+
 
 class ITHDMRanking:
 
