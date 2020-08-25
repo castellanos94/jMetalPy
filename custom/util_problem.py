@@ -1,4 +1,3 @@
-import math
 from typing import List, Tuple
 
 import numpy as np
@@ -298,108 +297,163 @@ class ReferenceSetITHDM:
             r1 = [[]]
             for idx in range(self.problem_.number_of_objectives):
                 v = Interval(best_compromise.objectives[idx] - frontiers_objectives[dm][0][idx])
-                dif_ideal_front.append(v.midpoint())
+                dif_ideal_front.append(abs(v.midpoint()))
             print(dif_ideal_front)
             dominance = ITHDMDominanceComparator(self.problem_.objectives_type,
                                                  self.problem_.get_preference_model(dm).alpha)
             if not self.problem_.get_preference_model(dm).supports_utility_function:
                 # Step 1:
                 for idx in range(self.problem_.number_of_objectives):
-                    r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 2.0))
+                    if self.problem_.objectives_type[idx]:
+                        r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 2.0))
+                    else:
+                        r2[0].append(Interval(best_compromise.objectives[idx] + dif_ideal_front[idx] / 2.0))
                 print('6 // OUTRANKING: R2(3) + R1(3)')
                 print(str(r2[0]).replace('[', '').replace(']', ''))
                 while dominance.dominance_test_(best_compromise.objectives, r2[0]) != -1:
                     for idx, tmp in enumerate(r2[0]):
-                        v = tmp - dif_ideal_front[idx] / 3
-                        r2[0][idx] = v
+                        if self.problem_.objectives_type[idx]:
+                            r2[0][idx] = tmp - dif_ideal_front[idx] / 3
+                        else:
+                            r2[0][idx] = tmp + dif_ideal_front[idx] / 3
                 # Step 2: Creando r11 a partir de la frontera
                 for idx in range(self.problem_.number_of_objectives):
-                    r1[0].append((frontiers_objectives[dm][0][idx] - dif_ideal_front[idx] / 3))
-
+                    if self.problem_.objectives_type[idx]:
+                        r1[0].append((frontiers_objectives[dm][0][idx] - dif_ideal_front[idx] / 3))
+                    else:
+                        r1[0].append((frontiers_objectives[dm][0][idx] + dif_ideal_front[idx] / 3))
                 while dominance.dominance_test_(r2[0], r1[0]) != -1:
                     for idx, tmp in enumerate(r1[0]):
-                        v = tmp - dif_ideal_front[idx] / 3
-                        r1[0][idx] = v
+                        if self.problem_.objectives_type[idx]:
+                            r1[0][idx] = tmp - dif_ideal_front[idx] / 3
+                        else:
+                            r1[0][idx] = tmp + dif_ideal_front[idx] / 3
                 # Step 3:  disminuir
-                dif_r2_r1 = [math.floor((r2[0][idx] - r1[0][idx]).midpoint()) for idx in
+                dif_r2_r1 = [abs((r2[0][idx] - r1[0][idx]).midpoint()) for idx in
                              range(self.problem_.number_of_objectives)]
-                r2 = r2 + [[v - dif_r2_r1[idx] / 4 for idx, v in enumerate(r2[0])]]
+                r2 = r2 + [
+                    [v - dif_r2_r1[idx] / 4 if self.problem_.objectives_type[idx] else v + dif_r2_r1[idx] / 4 for idx, v
+                     in enumerate(r2[0])]]
                 pref = ITHDMPreferences(self.problem_.objectives_type, self.problem_.get_preference_model(dm))
                 jdx = 0
                 while dominance.dominance_test_(best_compromise.objectives,
                                                 r2[1]) != -1 or not self.check_assumption44(r2[1], r2, pref, 1):
                     for idx in range(jdx, self.problem_.number_of_objectives):
-                        r2[1][idx] = r2[1][idx] - dif_r2_r1[idx] / 4
+                        if self.problem_.objectives_type[idx]:
+                            r2[1][idx] = r2[1][idx] - dif_r2_r1[idx] / 4
+                        else:
+                            r2[1][idx] = r2[1][idx] + dif_r2_r1[idx] / 4
                     jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
 
                 print(str(r2[1]).replace('[', '').replace(']', ''))
                 # Step 3 r23 -> r22, r23[i] = r21 - r11/3
-                r2 = r2 + [[v - dif_r2_r1[idx] / 4 for idx, v in enumerate(r2[1])]]
+                r2 = r2 + [
+                    [v - dif_r2_r1[idx] / 4 if self.problem_.objectives_type[idx] else v + dif_r2_r1[idx] / 4 for idx, v
+                     in enumerate(r2[1])]]
                 jdx = 0
                 while dominance.dominance_test_(best_compromise.objectives,
                                                 r2[2]) != -1 or not self.check_assumption44(r2[2], r2, pref, 2):
                     for idx in range(jdx, self.problem_.number_of_objectives):
-                        r2[2][idx] = r2[2][idx] - dif_r2_r1[idx] / 4
+                        if self.problem_.objectives_type[idx]:
+                            r2[2][idx] = r2[2][idx] - dif_r2_r1[idx] / 4
+                        else:
+                            r2[2][idx] = r2[2][idx] + dif_r2_r1[idx] / 4
                     jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
 
                 print(str(r2[2]).replace('[', '').replace(']', ''))
                 print(str(r1[0]).replace('[', '').replace(']', ''))
-                dif_r2_r1 = [math.floor((r2[2][idx] - r1[0][idx]).midpoint()) for idx in
+                dif_r2_r1 = [abs((r2[2][idx] - r1[0][idx]).midpoint()) for idx in
                              range(self.problem_.number_of_objectives)]
-                r1 = r1 + [[v - dif_r2_r1[idx] / 4 for idx, v in enumerate(r1[0])]]
+                r1 = r1 + [
+                    [v - dif_r2_r1[idx] / 4 if self.problem_.objectives_type[idx] else v + dif_r2_r1[idx] / 4 for idx, v
+                     in enumerate(r1[0])]]
                 jdx = 0
                 while dominance.dominance_test_(best_compromise.objectives,
                                                 r1[1]) != -1 or not self.check_assumption44(r1[1], r1, pref, 1):
                     for idx in range(jdx, self.problem_.number_of_objectives):
-                        r1[1][idx] = r1[1][idx] - dif_r2_r1[idx] / 4
+                        if self.problem_.objectives_type[idx]:
+                            r1[1][idx] = r1[1][idx] - dif_r2_r1[idx] / 4
+                        else:
+                            r1[1][idx] = r1[1][idx] + dif_r2_r1[idx] / 4
                     jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
 
                 print(str(r2[1]).replace('[', '').replace(']', ''))
-                r1 = r1 + [[v - dif_r2_r1[idx] / 4 for idx, v in enumerate(r1[1])]]
+                r1 = r1 + [
+                    [v - dif_r2_r1[idx] / 4 if self.problem_.objectives_type[idx] else v + dif_r2_r1[idx] / 4 for idx, v
+                     in enumerate(r1[1])]]
                 jdx = 0
                 while dominance.dominance_test_(best_compromise.objectives,
                                                 r1[2]) != -1 or not self.check_assumption44(r1[2], r1, pref, 2):
                     for idx in range(jdx, self.problem_.number_of_objectives):
-                        r1[2][idx] = r1[2][idx] - dif_r2_r1[idx] / 4
+                        if self.problem_.objectives_type[idx]:
+                            r1[2][idx] = r1[2][idx] - dif_r2_r1[idx] / 4
+                        else:
+                            r1[2][idx] = r1[2][idx] + dif_r2_r1[idx] / 4
                     jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
                 print(str(r1[2]).replace('[', '').replace(']', ''))
             else:
                 # Step 1:
                 for idx in range(self.problem_.number_of_objectives):
-                    r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 2.0))
+                    if self.problem_.objectives_type[idx]:
+                        r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 2.0))
+                    else:
+                        r2[0].append(Interval(best_compromise.objectives[idx] + dif_ideal_front[idx] / 2.0))
                 pref = ITHDMPreferenceUF(self.problem_.objectives_type, self.problem_.get_preference_model(dm))
                 while dominance.dominance_test_(best_compromise.objectives, r2[0]) != -1:
                     for idx in range(self.problem_.number_of_objectives):
-                        r2[0][idx] -= dif_ideal_front[idx] / 3
+                        if self.problem_.objectives_type[idx]:
+                            r2[0][idx] -= dif_ideal_front[idx] / 3
+                        else:
+                            r2[0][idx] += dif_ideal_front[idx] / 3
                 print('6 // UF: R2(3) + R1(3)')
                 print(str(r2[0]).replace('[', '').replace(']', ''))
-                r2 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r2[0])]]
+                r2 += [[v - dif_ideal_front[idx] / 3 if self.problem_.objectives_type[idx] else v + dif_ideal_front[
+                    idx] / 3 for idx, v in enumerate(r2[0])]]
                 while dominance.dominance_test_(best_compromise.objectives, r2[0]) != -1 and pref.compare_(r2[1],
                                                                                                            r2[0]) != 0:
                     for idx in range(self.problem_.number_of_objectives):
-                        r2[1][idx] -= dif_ideal_front[idx] / 3
+                        if self.problem_.objectives_type[idx]:
+                            r2[1][idx] -= dif_ideal_front[idx] / 3
+                        else:
+                            r2[1][idx] += dif_ideal_front[idx] / 3
 
                 print(str(r2[1]).replace('[', '').replace(']', ''))
-                r2 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r2[1])]]
+                r2 += [[v - dif_ideal_front[idx] / 3 if self.problem_.objectives_type[idx] else v + dif_ideal_front[
+                    idx] / 3 for idx, v in enumerate(r2[1])]]
                 while dominance.dominance_test_(best_compromise.objectives, r2[1]) != -1 and \
                         pref.compare_(r2[2], r2[0]) != 0 and pref.compare_(r2[2], r2[1]) != 0:
                     for idx in range(self.problem_.number_of_objectives):
-                        r2[1][idx] -= dif_ideal_front[idx] / 3
+                        if self.problem_.objectives_type[idx]:
+                            r2[1][idx] -= dif_ideal_front[idx] / 3
+                        else:
+                            r2[1][idx] += dif_ideal_front[idx] / 3
 
                 print(str(r2[2]).replace('[', '').replace(']', ''))
-                r1[0] = [v - dif_ideal_front[idx] for idx, v in enumerate(r2[2])]
+                r1[0] = [v - dif_ideal_front[idx] if self.problem_.objectives_type[idx] else v + dif_ideal_front[idx]
+                         for idx, v in enumerate(r2[2])]
                 while not self.check_assumption_74(r1[0], r2, pref):
                     for idx in range(self.problem_.number_of_objectives):
-                        r1[0] -= dif_ideal_front[idx] / 3
+                        if self.problem_.objectives_type[idx]:
+                            r1[0] -= dif_ideal_front[idx] / 3
+                        else:
+                            r1[0] += dif_ideal_front[idx] / 3
                 print(str(r1[0]).replace('[', '').replace(']', ''))
-                r1 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r1[0])]]
+                r1 += [[v - dif_ideal_front[idx] / 3 if self.problem_.objectives_type[idx] else v + dif_ideal_front[
+                    idx] / 3 for idx, v in enumerate(r1[0])]]
                 while not self.check_assumption_74(r1[1], r2, pref) and pref.compare_(r1[0], r1[1]) != 0:
                     for idx in range(self.problem_.number_of_objectives):
-                        r1[1] -= dif_ideal_front[idx] / 3
+                        if self.problem_.objectives_type[idx]:
+                            r1[1] -= dif_ideal_front[idx] / 3
+                        else:
+                            r1[1] += dif_ideal_front[idx] / 3
                 print(str(r1[1]).replace('[', '').replace(']', ''))
-                r1 += [[v - dif_ideal_front[idx] / 3 for idx, v in enumerate(r1[1])]]
+                r1 += [[v - dif_ideal_front[idx] / 3 if self.problem_.objectives_type[idx] else v + dif_ideal_front[
+                    idx] / 3 for idx, v in enumerate(r1[1])]]
                 while not self.check_assumption_74(r1[2], r2, pref) and pref.compare_(r1[0], r1[2]) != 0 and \
                         pref.compare_(r1[1], r1[2]) != 0:
                     for idx in range(self.problem_.number_of_objectives):
-                        r1[2] -= dif_ideal_front[idx] / 3
+                        if self.problem_.objectives_type[idx]:
+                            r1[2] -= dif_ideal_front[idx] / 3
+                        else:
+                            r1[2] += dif_ideal_front[idx] / 3
                 print(str(r1[2]).replace('[', '').replace(']', ''))

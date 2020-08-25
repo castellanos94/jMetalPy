@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -16,7 +18,7 @@ class Instance(ABC):
         self.dms = 1
 
     @abstractmethod
-    def read_(self, absolute_path: str):
+    def read_(self, absolute_path: str) -> Instance:
         pass
 
     def __str__(self) -> str:
@@ -34,7 +36,7 @@ class PspInstance(Instance):
         self.areas = []
         self.regions = []
 
-    def read_(self, absolute_path: str):
+    def read_(self, absolute_path: str) -> PspInstance:
         with open(absolute_path) as f:
             content = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
@@ -70,6 +72,7 @@ class PspInstance(Instance):
             index += 1
             a = [float(v) for v in content[index].split()]
             self.projects.append(a)
+        return self
 
     def __str__(self) -> str:
         return '{} {} {}'.format(super(PspInstance, self).__str__(), self.budget, self.weights)
@@ -86,9 +89,8 @@ class DTLZInstance(Instance):
         self.veto = []
         self.lambdas = []
         self.initial_solutions = None
-        self.best_compromise = None
 
-    def read_(self, absolute_path: str):
+    def read_(self, absolute_path: str) -> DTLZInstance:
         with open(absolute_path) as f:
             content = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
@@ -135,15 +137,50 @@ class DTLZInstance(Instance):
         if content[index].split()[0] == 'TRUE':
             index += 1
             n = int(content[index].split()[0])
-            self.best_compromise = []
+            best_compromise = []
 
             for i in range(n):
                 index += 1
                 line_split = content[index].split()
-                solution = FloatSolution(lower_bound=self.lower_bound, upper_bound=self.upper_bound,
-                                         number_of_objectives=self.n_obj)
-                solution.variables = [float(line_split[i].replace(',', '')) for i in range(0, self.n_var)]
-                self.best_compromise.append(solution)
+                best_compromise.append([float(line_split[i].replace(',', '')) for i in range(0, self.n_var)])
+            self.attributes['best_compromise'] = best_compromise
+        index += 1
+        line = clean_line(content[index])
+        if line[0] == "TRUE":
+            r2_set = []
+            r1_set = []
+            frontiers = []
+            for dm in range(self.dms):
+                index += 1
+                line = clean_line(content[index])
+                n_size = int(int(line[0]) / 2)
+                r2 = []
+                r1 = []
+                for n_row in range(n_size):
+                    r2_ = []
+                    index += 1
+                    line = clean_line(content[index])
+                    idx = 0
+                    while idx < self.n_obj:
+                        r2_.append(Interval(line[idx]))
+                        idx += 1
+                    r2.append(r2_)
+                for n_row in range(n_size):
+                    r1_ = []
+                    index += 1
+                    line = clean_line(content[index])
+                    idx = 0
+                    while idx < self.n_obj:
+                        r1_.append(Interval(line[idx]))
+                        idx += 1
+                    r1.append(r1_)
+                r2_set.append(r2)
+                r1_set.append(r1)
+                frontiers.append(r2 + r1)
+            self.attributes['frontiers'] = frontiers
+            self.attributes['r2'] = r2_set
+            self.attributes['r1'] = r1_set
+
         index += 1
         if content[index].split()[0] == 'TRUE':
             index += 1
@@ -163,6 +200,7 @@ class DTLZInstance(Instance):
             model = OutrankingModel(self.weight[dm], self.veto[dm], 1.0, self.lambdas[dm], self.lambdas[dm], 1)
             models.append(model)
         self.attributes['models'] = models
+        return self
 
 
 def clean_line(line: str) -> List[str]:
@@ -172,7 +210,7 @@ def clean_line(line: str) -> List[str]:
 
 class PspIntervalInstance(PspInstance):
 
-    def read_(self, absolute_path: str):
+    def read_(self, absolute_path: str) -> PspIntervalInstance:
         with open(absolute_path) as f:
             content = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
@@ -300,3 +338,4 @@ class PspIntervalInstance(PspInstance):
             self.attributes['frontiers'] = frontiers
             self.attributes['r2'] = r2_set
             self.attributes['r1'] = r1_set
+        return self
