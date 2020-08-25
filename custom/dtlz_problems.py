@@ -42,8 +42,9 @@ class DTLZ1P(FloatProblemGD):
                 solution.objectives[index_var] *= 1 - solution.variables[self.number_of_objectives - (index_var + 1)]
 
         c = self.classifier.classify(solution)
-        c[2] = -c[2]
-        c[3] = -c[3]
+        c[1] = -0.5 * c[1] if c[1] > 0 else 0
+        c[2] = -c[2] if c[2] > 0 else 0
+        c[3] = -2 * c[3] if c[3] > 0 else 0
         solution.constraints = c
         return solution
 

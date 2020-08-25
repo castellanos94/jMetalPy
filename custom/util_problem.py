@@ -187,9 +187,10 @@ class InterClassNC:
         category = -1
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
-            if preferences.compare(self.w, x) <= -1:
+            if preferences.compare(x, self.w) <= -1:
                 category = idx
                 break
+
         if category != -1:
             return category
         r1 = self.problem.instance_.attributes['r1'][dm]
@@ -211,14 +212,14 @@ class InterClassNC:
             if preferences.compare(x, self.w) <= -1:
                 category = idx
                 break
-        if category != -1:
-            return category + len(r1)
+
         r2 = self.problem.instance_.attributes['r2'][dm]
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
             if preferences.compare(x, self.w) <= -1:
                 category = idx
                 break
+
         return category
 
 

@@ -161,18 +161,18 @@ class DTLZInstance(Instance):
                     index += 1
                     line = clean_line(content[index])
                     idx = 0
-                    while idx < self.n_obj:
-                        r2_.append(Interval(line[idx]))
-                        idx += 1
+                    while idx < self.n_obj * 2:
+                        r2_.append(Interval(line[idx], line[idx + 1]))
+                        idx += 2
                     r2.append(r2_)
                 for n_row in range(n_size):
                     r1_ = []
                     index += 1
                     line = clean_line(content[index])
                     idx = 0
-                    while idx < self.n_obj:
-                        r1_.append(Interval(line[idx]))
-                        idx += 1
+                    while idx < self.n_obj * 2:
+                        r1_.append(Interval(line[idx], line[idx + 1]))
+                        idx += 2
                     r1.append(r1_)
                 r2_set.append(r2)
                 r1_set.append(r1)

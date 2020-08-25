@@ -98,7 +98,8 @@ def dtlz_test():
     print(f'Problem: ${problem.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag', filename=DIRECTORY_RESULTS + 'f0_class_' + algorithm.label,
+    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag',
+                    filename=DIRECTORY_RESULTS + 'f0_class_' + algorithm.label,
                     format='png')
 
 
@@ -157,3 +158,10 @@ if __name__ == '__main__':
     random.seed(1)
 
     dtlz_test()
+    instance = DTLZInstance()
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
+    instance.read_(path)
+    problem = DTLZ1P(instance)
+    best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
+    print(best.objectives, best.constraints)
+
