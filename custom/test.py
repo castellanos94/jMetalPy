@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from custom.dtlz_problems import DTLZ1P
+from custom.dtlz_problems import DTLZ2P, DTLZ1P, DTLZ3P, DTLZ4P
 from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
@@ -9,8 +9,11 @@ from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, Be
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII, UniformReferenceDirectionFactory
+from jmetal.core.problem import Problem
 from jmetal.lab.visualization import Plot
 from jmetal.operator import BitFlipMutation, SPXCrossover, PolynomialMutation, SBXCrossover
+from jmetal.problem import DTLZ1, DTLZ2
+from jmetal.problem.multiobjective.dtlz import DTLZ3, DTLZ4
 from jmetal.util.comparator import DominanceComparator
 from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.ranking import FastNonDominatedRanking
@@ -50,32 +53,27 @@ def psp_test():
     print('Computing time: ' + str(algorithm.total_computing_time))
 
 
-def dtlz_test():
-    instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
-    instance.read_(path)
-    problem = DTLZ1P(instance)
-
+def dtlz_test(p: Problem):
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
     max_evaluations = 25000
     experiment = 50
-    references = ReferenceDirectionFromSolution(problem)
+    #references = ReferenceDirectionFromSolution(p)
     algorithm = NSGAIII(
-        problem=problem,
+        problem=p,
         population_size=100,
         reference_directions=UniformReferenceDirectionFactory(3, n_points=91),
-        mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
+        mutation=PolynomialMutation(probability=1.0 / p.number_of_variables, distribution_index=20),
         crossover=SBXCrossover(probability=1.0, distribution_index=30),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
     bag = []
     for i in range(experiment):
         algorithm = NSGAIII(
-            problem=problem,
+            problem=p,
             population_size=92,
             reference_directions=UniformReferenceDirectionFactory(3, n_points=91),
-            mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
+            mutation=PolynomialMutation(probability=1.0 / p.number_of_variables, distribution_index=20),
             crossover=SBXCrossover(probability=1.0, distribution_index=30),
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         )
@@ -95,7 +93,7 @@ def dtlz_test():
     print_solutions_to_file(front, DIRECTORY_RESULTS + 'front0._class_' + algorithm.label)
 
     print(f'Algorithm: ${algorithm.get_name()}')
-    print(f'Problem: ${problem.get_name()}')
+    print(f'Problem: ${p.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
     plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag',
@@ -144,24 +142,21 @@ def looking_for_compromise(problem_: GDProblem, sample_size: int = 1000, k: int 
     print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem_.get_name())
 
 
-def reference_set_pspi():
-    psp_instance = PspIntervalInstance()
-    path = '/home/thinkpad/Dropbox/GDM/GroupDecision_202001/_instances/GD_ITHDM-UFCB.txt'
-    psp_instance.read_(path)
-
-    problem = PortfolioSocialProblemGD(psp_instance)
-    reference_set_outranking = ReferenceSetITHDM(problem)
+def reference_set(p: GDProblem):
+    reference_set_outranking = ReferenceSetITHDM(p)
     reference_set_outranking.compute()
 
 
 if __name__ == '__main__':
-    random.seed(1)
+   # random.seed(1)
 
-    dtlz_test()
     instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ4_Instance.txt'
     instance.read_(path)
-    problem = DTLZ1P(instance)
+    problem = DTLZ4P(instance)
+
+    dtlz_test(problem)
+    #reference_set(problem)
     best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     print(best.objectives, best.constraints)
-
+    #looking_for_compromise(problem)

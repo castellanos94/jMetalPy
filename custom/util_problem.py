@@ -337,15 +337,15 @@ class ReferenceSetITHDM:
                     [v - dif_r2_r1[idx] / 4 if self.problem_.objectives_type[idx] else v + dif_r2_r1[idx] / 4 for idx, v
                      in enumerate(r2[0])]]
                 pref = ITHDMPreferences(self.problem_.objectives_type, self.problem_.get_preference_model(dm))
-                jdx = 0
                 while dominance.dominance_test_(best_compromise.objectives,
                                                 r2[1]) != -1 or not self.check_assumption44(r2[1], r2, pref, 1):
-                    for idx in range(jdx, self.problem_.number_of_objectives):
+                    print(dominance.dominance_test_(best_compromise.objectives, r2[1]),
+                          self.check_assumption44(r2[1], r2, pref, 1))
+                    for idx in range(self.problem_.number_of_objectives):
                         if self.problem_.objectives_type[idx]:
                             r2[1][idx] = r2[1][idx] - dif_r2_r1[idx] / 4
                         else:
                             r2[1][idx] = r2[1][idx] + dif_r2_r1[idx] / 4
-                    jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
 
                 print(str(r2[1]).replace('[', '').replace(']', ''))
                 # Step 3 r23 -> r22, r23[i] = r21 - r11/3
@@ -378,8 +378,7 @@ class ReferenceSetITHDM:
                         else:
                             r1[1][idx] = r1[1][idx] + dif_r2_r1[idx] / 4
                     jdx = jdx + 2 if jdx < self.problem_.number_of_objectives else 0
-
-                print(str(r2[1]).replace('[', '').replace(']', ''))
+                print(str(r1[1]).replace('[', '').replace(']', ''))
                 r1 = r1 + [
                     [v - dif_r2_r1[idx] / 4 if self.problem_.objectives_type[idx] else v + dif_r2_r1[idx] / 4 for idx, v
                      in enumerate(r1[1])]]
