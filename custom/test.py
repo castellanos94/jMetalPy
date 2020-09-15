@@ -1,19 +1,18 @@
 import random
 from typing import List
 
-from custom.dtlz_problems import DTLZ2P, DTLZ1P, DTLZ3P, DTLZ4P
+from custom.dtlz_problems import DTLZ1P
 from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
-from custom.util_problem import ReferenceDirectionFromSolution, InterClassNC, BestCompromise, ReferenceSetITHDM
+from custom.nsga3_c import NSGA3C
+from custom.util_problem import InterClassNC, BestCompromise, ReferenceSetITHDM
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
-from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII, UniformReferenceDirectionFactory
+from jmetal.algorithm.multiobjective.nsgaiii import UniformReferenceDirectionFactory
 from jmetal.core.problem import Problem
 from jmetal.lab.visualization import Plot
 from jmetal.operator import BitFlipMutation, SPXCrossover, PolynomialMutation, SBXCrossover
-from jmetal.problem import DTLZ1, DTLZ2
-from jmetal.problem.multiobjective.dtlz import DTLZ3, DTLZ4
 from jmetal.util.comparator import DominanceComparator
 from jmetal.util.observer import ProgressBarObserver
 from jmetal.util.ranking import FastNonDominatedRanking
@@ -53,23 +52,23 @@ def psp_test():
     print('Computing time: ' + str(algorithm.total_computing_time))
 
 
-def dtlz_test(p: Problem):
+def dtlz_test(p: Problem, label: str = '', experiment: int = 50):
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
     max_evaluations = 25000
-    experiment = 50
-    #references = ReferenceDirectionFromSolution(p)
-    algorithm = NSGAIII(
+
+    # references = ReferenceDirectionFromSolution(p)
+    algorithm = NSGA3C(
         problem=p,
         population_size=100,
-        reference_directions=UniformReferenceDirectionFactory(3, n_points=91),
+        reference_directions=UniformReferenceDirectionFactory(3, n_points=92),
         mutation=PolynomialMutation(probability=1.0 / p.number_of_variables, distribution_index=20),
         crossover=SBXCrossover(probability=1.0, distribution_index=30),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
     bag = []
     for i in range(experiment):
-        algorithm = NSGAIII(
+        algorithm = NSGA3C(
             problem=p,
             population_size=92,
             reference_directions=UniformReferenceDirectionFactory(3, n_points=91),
@@ -80,24 +79,42 @@ def dtlz_test(p: Problem):
         progress_bar = ProgressBarObserver(max=max_evaluations)
         algorithm.observable.register(progress_bar)
         algorithm.run()
-
+        print(len(algorithm.get_result()))
         bag = bag + algorithm.get_result()
     print(len(bag))
-    print_solutions_to_file(bag, DIRECTORY_RESULTS + 'Solutions.bag._class_' + algorithm.label)
+    print_solutions_to_file(bag, DIRECTORY_RESULTS + 'Solutions.bag._class_' + label + algorithm.label)
     ranking = FastNonDominatedRanking()
 
     ranking.compute_ranking(bag)
-    front = ranking.get_subfront(0)
+    front_ = ranking.get_subfront(0)
+    class_fronts = [[], [], [], []]
+
+    for s in front_:
+        _class = problem.classifier.classify(s)
+        if _class[0] > 0:
+            class_fronts[0].append(s)
+        elif _class[1] > 0:
+            class_fronts[1].append(s)
+        elif _class[2] > 0:
+            class_fronts[2].append(s)
+        else:
+            class_fronts[3].append(s)
+    print(len(class_fronts[0]), len(class_fronts[1]), len(class_fronts[2]), len(class_fronts[3]))
+    front = []
+    for f in class_fronts:
+        if len(f) > 0:
+            for s in f:
+                front.append(s)
     print(len(front))
     # Save results to file
-    print_solutions_to_file(front, DIRECTORY_RESULTS + 'front0._class_' + algorithm.label)
+    print_solutions_to_file(class_fronts[0], DIRECTORY_RESULTS + 'front0._class_' + label + algorithm.label)
 
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${p.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT1-preferences_bag',
-                    filename=DIRECTORY_RESULTS + 'f0_class_' + algorithm.label,
+    plot_front.plot(class_fronts[0], label=label + 'F0 ' + algorithm.label,
+                    filename=DIRECTORY_RESULTS + 'f0_class_' + label + algorithm.label,
                     format='png')
 
 
@@ -134,12 +151,12 @@ def test_classifier():
         classifier.classify(s)
 
 
-def looking_for_compromise(problem_: GDProblem, sample_size: int = 1000, k: int = 101):
-    search = BestCompromise(problem_, sample_size=sample_size, k=k)
-    best, front = search.make()
+def looking_for_compromise(problem_: GDProblem):
+    search = BestCompromise(problem, k=200)
+    best, roi = search.make()
     print('Best compromise')
     print(best.variables, best.objectives, best.attributes['net_score'])
-    print_solutions_to_file(front, DIRECTORY_RESULTS + "compromise_" + problem_.get_name())
+    print_solutions_to_file(roi, DIRECTORY_RESULTS + "compromise_" + problem_.get_name())
 
 
 def reference_set(p: GDProblem):
@@ -148,15 +165,15 @@ def reference_set(p: GDProblem):
 
 
 if __name__ == '__main__':
-   # random.seed(1)
+    random.seed(1)
 
     instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ4_Instance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
     instance.read_(path)
-    problem = DTLZ4P(instance)
+    problem = DTLZ1P(instance)
 
-    dtlz_test(problem)
-    #reference_set(problem)
-    best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
-    print(best.objectives, best.constraints)
-    #looking_for_compromise(problem)
+    # dtlz_test(problem, 'enfoque_fronts_')
+    # reference_set(problem)
+    # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
+    # print(best.objectives, best.constraints)
+    looking_for_compromise(problem)

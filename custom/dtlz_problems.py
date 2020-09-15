@@ -22,7 +22,7 @@ class DTLZ1P(FloatProblemGD):
         self.lower_bound = self.number_of_variables * [0.0]
         self.upper_bound = self.number_of_variables * [1.0]
         self.classifier = InterClassNC(self)
-        self.number_of_constraints = 4
+        self.number_of_constraints = 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
         k = self.number_of_variables - self.number_of_objectives + 1
@@ -40,8 +40,8 @@ class DTLZ1P(FloatProblemGD):
 
             if index_var != 0:
                 solution.objectives[index_var] *= 1 - solution.variables[self.number_of_objectives - (index_var + 1)]
-
-        return self.classifier_solution(solution)
+        return solution
+        # return self.classifier_solution(solution)
 
     def classifier_solution(self, solution: FloatSolution) -> FloatSolution:
         c = self.classifier.classify(solution)
@@ -178,7 +178,7 @@ class DTLZ4P(DTLZ1P):
                 f[i] *= sin(pow(solution.variables[aux], alpha) * pi / 2.0)
 
         solution.objectives = [f[x] for x in range(self.number_of_objectives)]
-        #return solution
+        # return solution
         return self.classifier_solution(solution)
 
     def get_name(self):

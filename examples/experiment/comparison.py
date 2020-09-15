@@ -69,7 +69,7 @@ if __name__ == '__main__':
     jobs = configure_experiment(problems={'ZDT1': ZDT1(), 'ZDT2': ZDT2(), 'ZDT3': ZDT3()}, n_run=25)
 
     # Run the study
-    output_directory = 'data'
+    output_directory = '/home/thinkpad/PycharmProjects/jMetalPy/results/data'
 
     experiment = Experiment(output_dir=output_directory, jobs=jobs)
     experiment.run()
@@ -77,6 +77,6 @@ if __name__ == '__main__':
     # Generate summary file
     generate_summary_from_experiment(
         input_dir=output_directory,
-        reference_fronts='resources/reference_front',
+        reference_fronts='/home/thinkpad/PycharmProjects/jMetalPy/resources/reference_front',
         quality_indicators=[GenerationalDistance(), EpsilonIndicator(), HyperVolume([1.0, 1.0])]
     )

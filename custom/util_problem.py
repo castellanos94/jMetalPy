@@ -7,7 +7,6 @@ from custom.interval import Interval
 from custom.utils import ITHDMPreferences, ITHDMPreferenceUF, ITHDMRanking, ITHDMDominanceComparator
 from jmetal.algorithm.multiobjective.nsgaiii import ReferenceDirectionFactory
 from jmetal.core.solution import Solution
-from jmetal.util.density_estimator import CrowdingDistance
 
 
 class ReferenceDirectionFromSolution(ReferenceDirectionFactory):
@@ -229,7 +228,7 @@ class BestCompromise:
     Looking for a best compromise in a solution sample using the dm preferences
     """
 
-    def __init__(self, problem: GDProblem, sample_size=1000, dm: int = 0, k: int = 20):
+    def __init__(self, problem: GDProblem, sample_size=1000, dm: int = 0, k: int = 100000):
         self.problem = problem
         self.sample_size = sample_size
         self.dm = dm
@@ -257,8 +256,13 @@ class BestCompromise:
                 max_net_score = s.attributes['net_score']
                 best_compromise = s
         bag.remove(best_compromise)
-        CrowdingDistance().compute_density_estimator(bag)
-        return best_compromise, [best_compromise] + bag
+        # Make ROI
+        for x in bag:
+            self.preference.compare(x, best_compromise)
+            x.attributes['net_score'] = self.preference.sigmaXY
+
+        roi = list(filter(lambda p: p.attributes['net_score'] >= self.preference.preference_model.beta, bag))
+        return best_compromise, [best_compromise] + roi
 
 
 class ReferenceSetITHDM:
