@@ -105,6 +105,18 @@ class OutrankingModel:
         self.chi = chi
         self.supports_utility_function = supports_utility_function
 
+    def __str__(self) -> str:
+        return "weights : {}, veto : {}, alpha : {}, beta : {}, lambda : {}, chi : {}, uf : {}".format(self.weights,
+                                                                                                       self.veto,
+                                                                                                       self.alpha,
+                                                                                                       self.beta,
+                                                                                                       self.lambda_,
+                                                                                                       self.chi,
+                                                                                                       self.supports_utility_function)
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class DMGenerator:
     def __init__(self, number_of_variables: int, number_of_objectives: int, max_objectives: List[Interval]):
@@ -119,6 +131,8 @@ class DMGenerator:
 
     def _generate_veto(self, weights: List[Interval]):
         v = []
+        min_, max_ = min(weights), max(weights)
+        weights_norm = [(v_ - min_) / (max_ - min_) for v_ in weights]
         idx = 0
         while idx < self.numberOfObjectives:
             midp = self.maxObjectives[idx].midpoint()
@@ -128,15 +142,15 @@ class DMGenerator:
             r2 = random.uniform(0, 1)
             vu = midp + r2 * (width / 10.0)
             v.append(Interval(vl, vu))
-            valid = True
+            valid = False
             for jdx in range(idx):
-                if weights[jdx] >= weights[idx] and v[jdx] >= v[idx]:
-                    valid = False
-                    break
+                if weights_norm[jdx] >= weights_norm[idx] and v[jdx] >= v[idx]:
+                    valid = True
 
-            if valid:
+            if not valid:
                 idx += 1
-        return v
+        print("before re-normalize:", v)
+        return [(value + min_) * (max_ - min_) for value in v]
 
     def _generate_weights(self):
         weight = []

@@ -170,10 +170,13 @@ if __name__ == '__main__':
     instance = DTLZInstance()
     path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
     instance.read_(path)
+    for k,v in instance.attributes.items():
+        print(k,v)
     problem = DTLZ1P(instance)
-
+    k = 5
+    # dm_generator(3,7,7*[Interval(0,(9/8)*k*100)])
     # dtlz_test(problem, 'enfoque_fronts_')
     # reference_set(problem)
     # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     # print(best.objectives, best.constraints)
-    looking_for_compromise(problem)
+    #looking_for_compromise(problem)

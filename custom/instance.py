@@ -87,7 +87,8 @@ class DTLZInstance(Instance):
         self.dms = 1
         self.weight = []
         self.veto = []
-        self.lambdas = []
+        self.beta = []  # Credibility threshold
+        self.lambdas = []  # Majority Threshold
         self.initial_solutions = None
 
     def read_(self, absolute_path: str) -> DTLZInstance:
@@ -129,6 +130,11 @@ class DTLZInstance(Instance):
                 idx += 1
                 v.append(Interval(lower, upper))
             self.veto.append(v)
+        for i in range(self.dms):
+            index += 1
+            line_split = content[index].split()
+            self.beta.append(Interval(float(line_split[0]), float(line_split[1].replace(',', ''))))
+
         for i in range(self.dms):
             index += 1
             line_split = content[index].split()
@@ -197,7 +203,7 @@ class DTLZInstance(Instance):
         self.attributes['dms'] = self.dms
         models = []
         for dm in range(self.dms):
-            model = OutrankingModel(self.weight[dm], self.veto[dm], 1.0, self.lambdas[dm], self.lambdas[dm], 1)
+            model = OutrankingModel(self.weight[dm], self.veto[dm], 1.0, self.beta[dm], self.lambdas[dm], 1)
             models.append(model)
         self.attributes['models'] = models
         return self
