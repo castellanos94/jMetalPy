@@ -296,15 +296,14 @@ class ReferenceSetITHDM:
 
         for dm in range(dms):
             best_compromise = self.problem_.generate_existing_solution(self.instance_.attributes['best_compromise'][dm])
-            print('best compromise')
-            print(best_compromise.objectives)
+            print('best compromise', best_compromise.objectives)
             dif_ideal_front = []
             r2 = [[]]
             r1 = [[]]
             for idx in range(self.problem_.number_of_objectives):
                 v = Interval(best_compromise.objectives[idx] - frontiers_objectives[dm][0][idx])
                 dif_ideal_front.append(abs(v.midpoint()))
-            print(dif_ideal_front)
+            print('DIF ', dif_ideal_front)
             dominance = ITHDMDominanceComparator(self.problem_.objectives_type,
                                                  self.problem_.get_preference_model(dm).alpha)
             if not self.problem_.get_preference_model(dm).supports_utility_function:

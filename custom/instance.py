@@ -85,10 +85,6 @@ class DTLZInstance(Instance):
         self.lower_bound = None
         self.upper_bound = None
         self.dms = 1
-        self.weight = []
-        self.veto = []
-        self.beta = []  # Credibility threshold
-        self.lambdas = []  # Majority Threshold
         self.initial_solutions = None
 
     def read_(self, absolute_path: str) -> DTLZInstance:
@@ -105,9 +101,10 @@ class DTLZInstance(Instance):
         self.dms = int(content[index].split()[0])
         self.upper_bound = self.n_var * [0.0]
         self.lower_bound = self.n_var * [1.0]
+        weight = []
         for dm in range(self.dms):
             index += 1
-            line_split = content[index].split()
+            line_split = clean_line(content[index])
             idx = 0
             w = []
             while idx < self.n_obj * 2:
@@ -116,11 +113,11 @@ class DTLZInstance(Instance):
                 upper = float(line_split[idx].replace(',', ''))
                 idx += 1
                 w.append(Interval(lower, upper))
-            self.weight.append(w)
-
+            weight.append(w)
+        veto = []
         for dm in range(self.dms):
             index += 1
-            line_split = content[index].split()
+            line_split = clean_line(content[index])
             idx = 0
             v = []
             while idx < self.n_obj * 2:
@@ -129,16 +126,17 @@ class DTLZInstance(Instance):
                 upper = float(line_split[idx].replace(',', ''))
                 idx += 1
                 v.append(Interval(lower, upper))
-            self.veto.append(v)
+            veto.append(v)
+        beta = []
         for i in range(self.dms):
             index += 1
             line_split = content[index].split()
-            self.beta.append(Interval(float(line_split[0]), float(line_split[1].replace(',', ''))))
-
+            beta.append(Interval(float(line_split[0]), float(line_split[1].replace(',', ''))))
+        lambdas = []
         for i in range(self.dms):
             index += 1
             line_split = content[index].split()
-            self.lambdas.append(Interval(float(line_split[0]), float(line_split[1].replace(',', ''))))
+            lambdas.append(Interval(float(line_split[0]), float(line_split[1].replace(',', ''))))
         index += 1
         if content[index].split()[0] == 'TRUE':
             index += 1
@@ -203,7 +201,7 @@ class DTLZInstance(Instance):
         self.attributes['dms'] = self.dms
         models = []
         for dm in range(self.dms):
-            model = OutrankingModel(self.weight[dm], self.veto[dm], 1.0, self.beta[dm], self.lambdas[dm], 1)
+            model = OutrankingModel(weight[dm], veto[dm], 1.0, beta[dm], lambdas[dm], 1)
             models.append(model)
         self.attributes['models'] = models
         return self
@@ -211,7 +209,11 @@ class DTLZInstance(Instance):
 
 def clean_line(line: str) -> List[str]:
     line_ = line.replace('\"', "").split("//")
-    return [v.replace(',', '') for v in line_[0].split()]
+    line_ = [v.replace(',', ' ') for v in line_[0].split()]
+    rs = []
+    for v in line_:
+        rs += v.split()
+    return rs
 
 
 class PspIntervalInstance(PspInstance):

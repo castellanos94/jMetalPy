@@ -1,4 +1,3 @@
-import random
 from typing import List
 
 from custom.dtlz_problems import DTLZ1P
@@ -122,11 +121,12 @@ def dm_generator(number_of_objectives: int, number_of_variables: int, max_object
     print(number_of_variables, number_of_objectives, max_objectives)
     generator = DMGenerator(number_of_variables=number_of_variables, number_of_objectives=number_of_objectives,
                             max_objectives=max_objectives)
-    w, v = generator.make()
+    w, veto = generator.make()
     print(number_of_objectives)
     print(number_of_variables)
-    print(w)
-    print(v)
+    print(', '.join(map(str, w)))
+    print(', '.join(map(str, veto)))
+    print(Interval(0.51, 0.75))
     print(Interval(0.51, 0.67))
 
 
@@ -164,19 +164,31 @@ def reference_set(p: GDProblem):
     reference_set_outranking.compute()
 
 
+def read_roi_from_obj(problem: GDProblem, roi_file: str):
+    with open(roi_file) as f:
+        content = f.readlines()
+    # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    print(len(content))
+
+
 if __name__ == '__main__':
-    random.seed(1)
+    # random.seed(145600)
 
     instance = DTLZInstance()
     path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
     instance.read_(path)
-    for k,v in instance.attributes.items():
-        print(k,v)
+
     problem = DTLZ1P(instance)
+    for k, v in instance.__dict__.items():
+        print(k, v)
+
     k = 5
-    # dm_generator(3,7,7*[Interval(0,(9/8)*k*100)])
+    obj = 3
+    # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
     # dtlz_test(problem, 'enfoque_fronts_')
     # reference_set(problem)
     # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     # print(best.objectives, best.constraints)
-    #looking_for_compromise(problem)
+    looking_for_compromise(problem)

@@ -125,7 +125,9 @@ class DMGenerator:
         self.maxObjectives = max_objectives
 
     def make(self) -> Tuple[List[Interval], List[Interval]]:
+        print("Generating weights...")
         weights = self._generate_weights()
+        print("Generating veto with: ", weights)
         veto = self._generate_veto(weights)
         return weights, veto
 
@@ -149,8 +151,9 @@ class DMGenerator:
 
             if not valid:
                 idx += 1
-        print("before re-normalize:", v)
-        return [(value + min_) * (max_ - min_) for value in v]
+        #print("before re-normalize:", v)
+        #return [(value + min_) * (max_ - min_) for value in v]
+        return v
 
     def _generate_weights(self):
         weight = []
@@ -179,10 +182,10 @@ class DMGenerator:
         vector = [0] * (self.numberOfObjectives + 1)
         same = True
         while same:
-            vector = [random.randint(1, 10000) / 10000.0 for _ in vector]
+            vector = [random.randint(1, 1000) / 1000.0 for _ in vector]
             for idx in range(self.numberOfObjectives):
                 while vector[idx] <= 0 or vector[idx] >= 1.0:
-                    vector[idx] = random.randint(1, 10000) / 10000.0
+                    vector[idx] = random.randint(1, 1000) / 1000.0
             vector[self.numberOfObjectives] = 1
             same = False
             for idx in range(self.numberOfObjectives + 1):
