@@ -151,6 +151,9 @@ class DTLZInstance(Instance):
         index += 1
         line = clean_line(content[index])
         if line[0] == "TRUE":
+            is_interval = True
+            if len(line) >= 2 and line[1] == "FALSE":
+                is_interval = False
             r2_set = []
             r1_set = []
             frontiers = []
@@ -165,18 +168,27 @@ class DTLZInstance(Instance):
                     index += 1
                     line = clean_line(content[index])
                     idx = 0
-                    while idx < self.n_obj * 2:
-                        r2_.append(Interval(line[idx], line[idx + 1]))
-                        idx += 2
+                    while idx < self.n_obj * (2 if is_interval else 1):
+                        if is_interval:
+                            r2_.append(Interval(line[idx], line[idx + 1]))
+                            idx += 2
+                        else:
+                            r2_.append(Interval(line[idx], line[idx]))
+                            idx += 1
                     r2.append(r2_)
                 for n_row in range(n_size):
                     r1_ = []
                     index += 1
                     line = clean_line(content[index])
                     idx = 0
-                    while idx < self.n_obj * 2:
-                        r1_.append(Interval(line[idx], line[idx + 1]))
-                        idx += 2
+                    while idx < self.n_obj * (2 if is_interval else 1):
+                        if is_interval:
+                            r1_.append(Interval(line[idx], line[idx + 1]))
+                            idx += 2
+                        else:
+                            r1_.append(Interval(line[idx], line[idx]))
+                            idx += 1
+
                     r1.append(r1_)
                 r2_set.append(r2)
                 r1_set.append(r1)
@@ -209,7 +221,7 @@ class DTLZInstance(Instance):
 
 def clean_line(line: str) -> List[str]:
     line_ = line.replace('\"', "").split("//")
-    line_ = [v.replace(',', ' ') for v in line_[0].split()]
+    line_ = [v.replace(',', ' ').replace('*', '') for v in line_[0].split()]
     rs = []
     for v in line_:
         rs += v.split()
@@ -313,6 +325,9 @@ class PspIntervalInstance(PspInstance):
         index += 1
         line = clean_line(content[index])
         if line[0] == "TRUE":
+            notInterval = False
+            if len(line) >= 2 and line[1] == "FALSE":
+                notInterval = True
             r2_set = []
             r1_set = []
             frontiers = []
@@ -327,7 +342,7 @@ class PspIntervalInstance(PspInstance):
                     index += 1
                     line = clean_line(content[index])
                     idx = 0
-                    while idx < self.n_obj * 2:
+                    while idx < self.n_obj * (1 if notInterval else 2):
                         r2_.append(Interval(line[idx], line[idx + 1]))
                         idx += 2
                     r2.append(r2_)
@@ -336,7 +351,7 @@ class PspIntervalInstance(PspInstance):
                     index += 1
                     line = clean_line(content[index])
                     idx = 0
-                    while idx < self.n_obj * 2:
+                    while idx < self.n_obj * (1 if notInterval else 2):
                         r1_.append(Interval(line[idx], line[idx + 1]))
                         idx += 2
                     r1.append(r1_)

@@ -300,6 +300,8 @@ class ReferenceSetITHDM:
             dif_ideal_front = []
             r2 = [[]]
             r1 = [[]]
+            for v in frontiers_objectives:
+                print(v)
             for idx in range(self.problem_.number_of_objectives):
                 v = Interval(best_compromise.objectives[idx] - frontiers_objectives[dm][0][idx])
                 dif_ideal_front.append(abs(v.midpoint()))

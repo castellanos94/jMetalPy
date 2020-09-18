@@ -1,15 +1,14 @@
 from typing import List
 
 from custom.dtlz_problems import DTLZ1P
-from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem
-from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
+from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem, FloatProblemGD
+from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance, clean_line
 from custom.interval import Interval
 from custom.nsga3_c import NSGA3C
 from custom.util_problem import InterClassNC, BestCompromise, ReferenceSetITHDM
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import UniformReferenceDirectionFactory
-from jmetal.core.problem import Problem
 from jmetal.lab.visualization import Plot
 from jmetal.operator import BitFlipMutation, SPXCrossover, PolynomialMutation, SBXCrossover
 from jmetal.util.comparator import DominanceComparator
@@ -51,7 +50,7 @@ def psp_test():
     print('Computing time: ' + str(algorithm.total_computing_time))
 
 
-def dtlz_test(p: Problem, label: str = '', experiment: int = 50):
+def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 30):
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
     max_evaluations = 25000
@@ -60,17 +59,18 @@ def dtlz_test(p: Problem, label: str = '', experiment: int = 50):
     algorithm = NSGA3C(
         problem=p,
         population_size=100,
-        reference_directions=UniformReferenceDirectionFactory(3, n_points=92),
+        reference_directions=UniformReferenceDirectionFactory(p.instance_.n_obj, n_points=92),
         mutation=PolynomialMutation(probability=1.0 / p.number_of_variables, distribution_index=20),
         crossover=SBXCrossover(probability=1.0, distribution_index=30),
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
     bag = []
+    total_time = 0
     for i in range(experiment):
         algorithm = NSGA3C(
             problem=p,
             population_size=92,
-            reference_directions=UniformReferenceDirectionFactory(3, n_points=91),
+            reference_directions=UniformReferenceDirectionFactory(p.instance_.n_obj, n_points=91),
             mutation=PolynomialMutation(probability=1.0 / p.number_of_variables, distribution_index=20),
             crossover=SBXCrossover(probability=1.0, distribution_index=30),
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -78,14 +78,20 @@ def dtlz_test(p: Problem, label: str = '', experiment: int = 50):
         progress_bar = ProgressBarObserver(max=max_evaluations)
         algorithm.observable.register(progress_bar)
         algorithm.run()
-        print(len(algorithm.get_result()))
+        total_time += algorithm.total_computing_time
         bag = bag + algorithm.get_result()
     print(len(bag))
+    print('Total computing time:', total_time)
+    print('Average time: ', str(total_time / experiment))
     print_solutions_to_file(bag, DIRECTORY_RESULTS + 'Solutions.bag._class_' + label + algorithm.label)
     ranking = FastNonDominatedRanking()
 
     ranking.compute_ranking(bag)
     front_ = ranking.get_subfront(0)
+    plot_front = Plot(title='Pareto front approximation' + ' Sin desplazamiento de frente')
+    plot_front.plot(front_, label=label + 'F0 ' + algorithm.label,
+                    filename=DIRECTORY_RESULTS + 'F0_class_' + 'original_' + algorithm.label,
+                    format='png')
     class_fronts = [[], [], [], []]
 
     for s in front_:
@@ -111,9 +117,9 @@ def dtlz_test(p: Problem, label: str = '', experiment: int = 50):
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${p.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')
-    plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
+    plot_front = Plot(title='Pareto front approximation' + label)
     plot_front.plot(class_fronts[0], label=label + 'F0 ' + algorithm.label,
-                    filename=DIRECTORY_RESULTS + 'f0_class_' + label + algorithm.label,
+                    filename=DIRECTORY_RESULTS + 'F0_class_' + label + algorithm.label,
                     format='png')
 
 
@@ -172,6 +178,52 @@ def read_roi_from_obj(problem: GDProblem, roi_file: str):
     print(len(content))
 
 
+def loadDataWithClass(p: DTLZ1P, bag_path: str, label: str):
+    with open(bag_path) as f:
+        content = f.readlines()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    _bag = []
+    for element in content:
+        if not ('variables * objectives * constraints' in element):
+            line = clean_line(element)
+            _bag.append(p.generate_existing_solution([float(_var) for _var in line[:p.number_of_variables]]))
+    print(len(_bag))
+    # classifier solutions
+    _class = [[], [], [], []]
+    for _solution in _bag:
+        _class_vector = p.classifier.classify(_solution)
+        if _class_vector[0] > 0:
+            _class[0].append(_solution)
+        elif _class_vector[1] > 0:
+            _class[1].append(_solution)
+        elif _class_vector[2] > 0:
+            _class[2].append(_solution)
+        else:
+            _class[3].append(_solution)
+    print(len(_class[0]), len(_class[1]), len(_class[2]), len(_class[3]))
+    _front = None
+    idx = 0
+    for i, _f in enumerate(_class):
+        if len(_f) > 0:
+            _front = _f
+            idx = i
+            break
+    print(idx, len(_front))
+    # Save results to file
+    print_solutions_to_file(_front, DIRECTORY_RESULTS + 'front0._class_' + label + p.get_name())
+    alabels = []
+    for obj in range(p.number_of_objectives):
+        alabels.append('Obj-' + str(obj))
+    plot_front = Plot(title='Pareto front approximation ' + label + 'F' + str(idx) + p.get_name(), axis_labels=alabels)
+    plot_front.plot(_front, label=label + 'F' + str(idx) + p.get_name(),
+                    filename=DIRECTORY_RESULTS + 'F0_class_' + label + p.get_name(),
+                    format='png')
+    # Show best compromise
+    _best = p.generate_existing_solution(p.instance_.attributes['best_compromise'][0])
+    print('Best compromise:', _best.objectives)
+
+
 if __name__ == '__main__':
     # random.seed(145600)
 
@@ -186,9 +238,12 @@ if __name__ == '__main__':
 
     k = 5
     obj = 3
+    loadDataWithClass(problem,
+                      '/home/thinkpad/PycharmProjects/jMetalPy/results/Solutions.bag._class_enfoque_fronts_NSGAIII_custom.DTLZ1P_10.csv',
+                      'enfoque_fronts_')
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
     # dtlz_test(problem, 'enfoque_fronts_')
     # reference_set(problem)
     # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     # print(best.objectives, best.constraints)
-    looking_for_compromise(problem)
+    # looking_for_compromise(problem)
