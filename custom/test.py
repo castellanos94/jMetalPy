@@ -2,11 +2,12 @@ from typing import List
 
 from custom.dtlz_problems import DTLZ1P
 from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem, FloatProblemGD
-from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance, clean_line
+from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
 from custom.nsga3_c import NSGA3C
 from custom.util_problem import InterClassNC, BestCompromise, ReferenceSetITHDM
-from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator
+from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator, clean_line, ITHDMRanking, \
+    ITHDMPreferences
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import UniformReferenceDirectionFactory
 from jmetal.lab.visualization import Plot
@@ -224,6 +225,43 @@ def loadDataWithClass(p: DTLZ1P, bag_path: str, label: str):
     print('Best compromise:', _best.objectives)
 
 
+def load_objectives_from_gdm_file(p: DTLZ1P, obj_path: str):
+    with open(obj_path) as f:
+        content = f.readlines()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    _bag = []
+    for element in content:
+        line = clean_line(element)
+        solution_ = p.generate_solution()
+        solution_.objectives = [float(_var) for _var in line[:p.number_of_objectives]]
+        _bag.append(solution_)
+        print(solution_.objectives)
+    print(len(_bag))
+    preference = ITHDMPreferences(p.objectives_type, p.instance_.attributes['models'][0])
+    ranking = ITHDMRanking(preference, [-1], [-1])
+    candidates = ranking.compute_ranking(_bag)
+    print('Candidates size: ', len(candidates))
+    max_net_score = 0
+    best_compromise = None
+    for s in candidates:
+        if max_net_score < s.attributes['net_score']:
+            max_net_score = s.attributes['net_score']
+            best_compromise = s
+    candidates.remove(best_compromise)
+    # Make ROI
+    for x in candidates:
+        candidates.preference.compare(x, best_compromise)
+        x.attributes['net_score'] = preference.sigmaXY
+
+    roi = list(filter(lambda p: p.attributes['net_score'] >= preference.preference_model.beta, candidates))
+    print('Best compromise')
+    print(best_compromise.objectives)
+    print('ROI', len(roi))
+    for s in roi:
+        print(s.objectives)
+
+
 if __name__ == '__main__':
     # random.seed(145600)
 
@@ -238,9 +276,11 @@ if __name__ == '__main__':
 
     k = 5
     obj = 3
-    loadDataWithClass(problem,
-                      '/home/thinkpad/PycharmProjects/jMetalPy/results/Solutions.bag._class_enfoque_fronts_NSGAIII_custom.DTLZ1P_10.csv',
-                      'enfoque_fronts_')
+    # loadDataWithClass(problem,
+    #                 '/home/thinkpad/PycharmProjects/jMetalPy/results/Solutions.bag._class_enfoque_fronts_NSGAIII_custom.DTLZ1P_10.csv',
+    #                 'enfoque_fronts_')
+    load_objectives_from_gdm_file(problem,
+                                  '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/objetivos_nelson.csv')
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
     # dtlz_test(problem, 'enfoque_fronts_')
     # reference_set(problem)

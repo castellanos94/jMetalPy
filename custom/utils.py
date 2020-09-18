@@ -151,8 +151,8 @@ class DMGenerator:
 
             if not valid:
                 idx += 1
-        #print("before re-normalize:", v)
-        #return [(value + min_) * (max_ - min_) for value in v]
+        # print("before re-normalize:", v)
+        # return [(value + min_) * (max_ - min_) for value in v]
         return v
 
     def _generate_weights(self):
@@ -400,3 +400,12 @@ class ITHDMRanking:
         if len(front[0]) > 0:
             self.ranked_sublists.append(front[0])
         return self.ranked_sublists
+
+
+def clean_line(line: str) -> List[str]:
+    line_ = line.replace('\"', "").split("//")
+    line_ = [v.replace(',', ' ').replace('*', '') for v in line_[0].split()]
+    rs = []
+    for v in line_:
+        rs += v.split()
+    return rs

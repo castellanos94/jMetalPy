@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from custom.interval import Interval
-from custom.utils import OutrankingModel
+from custom.utils import OutrankingModel, clean_line
 from jmetal.core.solution import FloatSolution
 
 
@@ -218,14 +218,6 @@ class DTLZInstance(Instance):
         self.attributes['models'] = models
         return self
 
-
-def clean_line(line: str) -> List[str]:
-    line_ = line.replace('\"', "").split("//")
-    line_ = [v.replace(',', ' ').replace('*', '') for v in line_[0].split()]
-    rs = []
-    for v in line_:
-        rs += v.split()
-    return rs
 
 
 class PspIntervalInstance(PspInstance):
