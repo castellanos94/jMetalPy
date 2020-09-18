@@ -88,9 +88,13 @@ def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 30):
 
     ranking.compute_ranking(bag)
     front_ = ranking.get_subfront(0)
-    plot_front = Plot(title='Pareto front approximation' + ' Sin desplazamiento de frente')
+    alabels = []
+    for obj in range(p.number_of_objectives):
+        alabels.append('Obj-' + str(obj))
+    plot_front = Plot(title='Pareto front approximation' + '\nSin desplazamiento de frente ' + label,
+                      axis_labels=alabels)
     plot_front.plot(front_, label=label + 'F0 ' + algorithm.label,
-                    filename=DIRECTORY_RESULTS + 'F0_class_' + 'original_' + algorithm.label,
+                    filename=DIRECTORY_RESULTS + 'F0_class_' + 'original_' + label + algorithm.label,
                     format='png')
     class_fronts = [[], [], [], []]
 
@@ -111,15 +115,23 @@ def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 30):
             for s in f:
                 front.append(s)
     print(len(front))
+    _front = None
+    idx = 0
+    for i, _f in enumerate(class_fronts):
+        if len(_f) > 0:
+            _front = _f
+            idx = i
+            break
+    print(idx, len(_front))
     # Save results to file
-    print_solutions_to_file(class_fronts[0], DIRECTORY_RESULTS + 'front0._class_' + label + algorithm.label)
+    print_solutions_to_file(_front, DIRECTORY_RESULTS + 'front0._class_' + label + algorithm.label)
 
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${p.get_name()}')
-    print(f'Computing time: ${algorithm.total_computing_time}')
-    plot_front = Plot(title='Pareto front approximation' + label)
-    plot_front.plot(class_fronts[0], label=label + 'F0 ' + algorithm.label,
-                    filename=DIRECTORY_RESULTS + 'F0_class_' + label + algorithm.label,
+
+    plot_front = Plot(title='Pareto front approximation\n' + label + 'F' + str(idx) + p.get_name(), axis_labels=alabels)
+    plot_front.plot(_front, label=label + 'F' + str(idx) + p.get_name(),
+                    filename=DIRECTORY_RESULTS + 'F0_class_' + label + p.get_name(),
                     format='png')
 
 
