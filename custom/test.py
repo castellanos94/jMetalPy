@@ -6,8 +6,7 @@ from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
 from custom.nsga3_c import NSGA3C
 from custom.util_problem import InterClassNC, BestCompromise, ReferenceSetITHDM
-from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator, clean_line, ITHDMRanking, \
-    ITHDMPreferences
+from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator, clean_line, ITHDMPreferences
 from jmetal.algorithm.multiobjective import NSGAII
 from jmetal.algorithm.multiobjective.nsgaiii import UniformReferenceDirectionFactory
 from jmetal.lab.visualization import Plot
@@ -166,17 +165,9 @@ def looking_for_compromise(problem_: GDProblem):
     print_solutions_to_file(roi, DIRECTORY_RESULTS + "compromise_" + problem_.get_name())
 
 
-def reference_set(p: GDProblem):
+def reference_set(p: GDProblem, is_objective: False):
     reference_set_outranking = ReferenceSetITHDM(p)
-    reference_set_outranking.compute()
-
-
-def read_roi_from_obj(problem: GDProblem, roi_file: str):
-    with open(roi_file) as f:
-        content = f.readlines()
-    # you may also want to remove whitespace characters like `\n` at the end of each line
-    content = [x.strip() for x in content]
-    print(len(content))
+    reference_set_outranking.compute(is_objective)
 
 
 def loadDataWithClass(p: DTLZ1P, bag_path: str, label: str):
@@ -239,27 +230,25 @@ def load_objectives_from_gdm_file(p: DTLZ1P, obj_path: str):
         print(solution_.objectives)
     print(len(_bag))
     preference = ITHDMPreferences(p.objectives_type, p.instance_.attributes['models'][0])
-    ranking = ITHDMRanking(preference, [-1], [-1])
-    candidates = ranking.compute_ranking(_bag)
-    print('Candidates size: ', len(candidates))
-    max_net_score = 0
-    best_compromise = None
-    for s in candidates:
-        if max_net_score < s.attributes['net_score']:
-            max_net_score = s.attributes['net_score']
-            best_compromise = s
-    candidates.remove(best_compromise)
-    # Make ROI
-    for x in candidates:
-        candidates.preference.compare(x, best_compromise)
-        x.attributes['net_score'] = preference.sigmaXY
+    best_compromise = p.generate_existing_solution(p.instance_.attributes['best_compromise'][0], True)
 
-    roi = list(filter(lambda p: p.attributes['net_score'] >= preference.preference_model.beta, candidates))
+    max_net_score = 0
+
+    # Make ROI
+    print('best compromise', best_compromise.objectives)
+    for x in _bag:
+        preference.compare(x, best_compromise)
+        x.attributes['net_score'] = preference.sigmaXY
+        if max_net_score < preference.sigmaXY:
+            max_net_score = preference.sigmaXY
+            best_compromise = x
+
+    roi = list(filter(lambda x: x.attributes['net_score'] >= preference.preference_model.beta, _bag))
     print('Best compromise')
-    print(best_compromise.objectives)
+    print(best_compromise.objectives, best_compromise.attributes['net_score'])
     print('ROI', len(roi))
-    for s in roi:
-        print(s.objectives)
+    for x in roi:
+        print(x.objectives, x.attributes['net_score'])
 
 
 if __name__ == '__main__':
@@ -279,11 +268,10 @@ if __name__ == '__main__':
     # loadDataWithClass(problem,
     #                 '/home/thinkpad/PycharmProjects/jMetalPy/results/Solutions.bag._class_enfoque_fronts_NSGAIII_custom.DTLZ1P_10.csv',
     #                 'enfoque_fronts_')
-    load_objectives_from_gdm_file(problem,
-                                  '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/objetivos_nelson.csv')
+    # load_objectives_from_gdm_file(problem,                                  '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/objetivos_nelson.csv')
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
-    # dtlz_test(problem, 'enfoque_fronts_')
-    # reference_set(problem)
+    dtlz_test(problem, 'enfoque_fronts_GDM')
+    # reference_set(problem, True)
     # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     # print(best.objectives, best.constraints)
     # looking_for_compromise(problem)

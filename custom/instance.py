@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from custom.interval import Interval
 from custom.utils import OutrankingModel, clean_line
@@ -138,7 +137,11 @@ class DTLZInstance(Instance):
             line_split = content[index].split()
             lambdas.append(Interval(float(line_split[0]), float(line_split[1].replace(',', ''))))
         index += 1
-        if content[index].split()[0] == 'TRUE':
+        line = clean_line(content[index])
+        if line[0] == 'TRUE':
+            read_objectives = False
+            if len(line) >= 2:
+                read_objectives = line[1] == "TRUE"
             index += 1
             n = int(content[index].split()[0])
             best_compromise = []
@@ -146,7 +149,10 @@ class DTLZInstance(Instance):
             for i in range(n):
                 index += 1
                 line_split = content[index].split()
-                best_compromise.append([float(line_split[i].replace(',', '')) for i in range(0, self.n_var)])
+                if read_objectives:
+                    best_compromise.append([float(line_split[i].replace(',', '')) for i in range(0, self.n_obj)])
+                else:
+                    best_compromise.append([float(line_split[i].replace(',', '')) for i in range(0, self.n_var)])
             self.attributes['best_compromise'] = best_compromise
         index += 1
         line = clean_line(content[index])
@@ -217,7 +223,6 @@ class DTLZInstance(Instance):
             models.append(model)
         self.attributes['models'] = models
         return self
-
 
 
 class PspIntervalInstance(PspInstance):

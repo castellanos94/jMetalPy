@@ -76,14 +76,17 @@ class FloatProblemGD(GDProblem[FloatSolution], ABC):
 
         return new_solution
 
-    def generate_existing_solution(self, variables: List[float]) -> FloatSolution:
+    def generate_existing_solution(self, variables: List[float], is_objectives: bool = False) -> FloatSolution:
         new_solution = FloatSolution(
             self.lower_bound,
             self.upper_bound,
             self.number_of_objectives,
             self.number_of_constraints)
-        new_solution.variables = [variables[index_var] for index_var in range(self.number_of_variables)]
-        self.evaluate(new_solution)
+        if not is_objectives:
+            new_solution.variables = [variables[index_var] for index_var in range(self.number_of_variables)]
+            self.evaluate(new_solution)
+        else:
+            new_solution.objectives = [variables[index_var] for index_var in range(self.number_of_objectives)]
         return new_solution
 
 

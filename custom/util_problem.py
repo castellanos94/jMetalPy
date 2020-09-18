@@ -290,12 +290,13 @@ class ReferenceSetITHDM:
                 return False
         return True
 
-    def compute(self):
+    def compute(self, is_objective: bool = False):
         dms = self.instance_.attributes['dms'] if 'dms' else 1 in self.instance_.attributes.keys()
         frontiers_objectives = self.instance_.attributes['frontiers']
 
         for dm in range(dms):
-            best_compromise = self.problem_.generate_existing_solution(self.instance_.attributes['best_compromise'][dm])
+            best_compromise = self.problem_.generate_existing_solution(self.instance_.attributes['best_compromise'][dm],
+                                                                       is_objective)
             print('best compromise', best_compromise.objectives)
             dif_ideal_front = []
             r2 = [[]]
