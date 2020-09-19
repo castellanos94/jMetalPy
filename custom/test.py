@@ -1,3 +1,4 @@
+import random
 from typing import List
 
 from custom.dtlz_problems import DTLZ1P
@@ -265,6 +266,7 @@ def load_objectives_from_gdm_file(p: DTLZ1P, obj_path: str):
 
 if __name__ == '__main__':
     # random.seed(145600)
+    random.seed(1)
 
     instance = DTLZInstance()
     path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
@@ -282,8 +284,8 @@ if __name__ == '__main__':
     #                 'enfoque_fronts_')
     # load_objectives_from_gdm_file(problem,                                  '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/objetivos_nelson.csv')
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
-    dtlz_test(problem, 'enfoque_fronts_GDM')
+    # dtlz_test(problem, 'enfoque_fronts_GDM')
     # reference_set(problem, True)
     # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     # print(best.objectives, best.constraints)
-    # looking_for_compromise(problem)
+    looking_for_compromise(problem)

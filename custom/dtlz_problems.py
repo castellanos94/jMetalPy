@@ -59,7 +59,7 @@ class DTLZ1P(FloatProblemGD):
             self.number_of_constraints)
         new_solution.variables = []
         for _ in range(self.number_of_objectives - 1):
-            new_solution.variables.append(random.random())
+            new_solution.variables.append(random.uniform(0, 1))
         for _ in range(self.number_of_objectives - 1, self.number_of_variables):
             new_solution.variables.append(0.5)
         self.evaluate(new_solution)
