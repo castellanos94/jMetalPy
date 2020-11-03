@@ -57,7 +57,7 @@ class InterClassNC:
             if not self.problem.get_preference_model(dm).supports_utility_function:
                 asc = self._asc_rule(x, dm)
                 dsc = self._desc_rule(x, dm)
-                if asc == dsc:
+                if asc == dsc and asc != -1:
                     if asc < len(self.problem.instance_.attributes['r2'][dm]):
                         if self._is_high_sat(x, dm):
                             categories[0] += 1
@@ -186,7 +186,8 @@ class InterClassNC:
         category = -1
         for idx in range(len(r2)):
             self.w.objectives = r2[idx]
-            if preferences.compare(x, self.w) <= -1:
+            v = preferences.compare(self.w, x)
+            if v <= -1 or v == 2:
                 category = idx
                 break
 
@@ -211,6 +212,7 @@ class InterClassNC:
             if preferences.compare(x, self.w) <= -1:
                 category = idx
                 break
+
         if r1 != -1:
             category += len(r1)
         r2 = self.problem.instance_.attributes['r2'][dm]

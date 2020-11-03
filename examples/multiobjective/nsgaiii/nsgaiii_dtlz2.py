@@ -1,5 +1,7 @@
 import random
 
+from custom.dtlz_problems import DTLZ1P
+from custom.instance import DTLZInstance
 from custom.utils import DIRECTORY_RESULTS, print_solutions_to_file
 from jmetal.algorithm.multiobjective.nsgaiii import NSGAIII, UniformReferenceDirectionFactory
 from jmetal.lab.visualization import Plot
@@ -13,9 +15,15 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 
 if __name__ == '__main__':
     random.seed(8435)
+    random.seed(1)
 
-    problem = DTLZ7()
-    problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ7.3D.pf')
+    instance = DTLZInstance()
+    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
+    # path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
+    instance.read_(path)
+
+    problem = DTLZ1P(instance)
+    problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ1.3D.pf')
 
     max_evaluations = 25000
     experiment = 50
@@ -52,7 +60,7 @@ if __name__ == '__main__':
     # Save results to file
     print_solutions_to_file(front, DIRECTORY_RESULTS + 'front0.' + algorithm.label)
     plot_front = Plot(title='Pareto front approximation', axis_labels=['x', 'y', 'z'])
-    plot_front.plot(front, label='NSGAII-ZDT7', filename=DIRECTORY_RESULTS + 'NSGAII-ZDT7', format='png')
+    plot_front.plot(front, label='NSGAII-ZDT7', filename=DIRECTORY_RESULTS + 'NSGAII-ZDT1P', format='png')
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${problem.get_name()}')
     print(f'Computing time: ${algorithm.total_computing_time}')

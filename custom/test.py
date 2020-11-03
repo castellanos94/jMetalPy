@@ -9,7 +9,7 @@ from custom.nsga3_c import NSGA3C
 from custom.util_problem import InterClassNC, BestCompromise, ReferenceSetITHDM
 from custom.utils import print_solutions_to_file, DIRECTORY_RESULTS, DMGenerator, clean_line, ITHDMPreferences
 from jmetal.algorithm.multiobjective import NSGAII
-from jmetal.algorithm.multiobjective.nsgaiii import UniformReferenceDirectionFactory
+from jmetal.algorithm.multiobjective.nsgaiii import UniformReferenceDirectionFactory, NSGAIII
 from jmetal.lab.visualization import Plot
 from jmetal.operator import BitFlipMutation, SPXCrossover, PolynomialMutation, SBXCrossover
 from jmetal.util.comparator import DominanceComparator
@@ -51,7 +51,7 @@ def psp_test():
     print('Computing time: ' + str(algorithm.total_computing_time))
 
 
-def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 30):
+def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 50):
     # problem.reference_front = read_solutions(filename='resources/reference_front/DTLZ2.3D.pf')
 
     max_evaluations = 25000
@@ -89,10 +89,11 @@ def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 30):
 
     ranking.compute_ranking(bag)
     front_ = ranking.get_subfront(0)
+    print('Front 0 size : ', len(front_))
     alabels = []
     for obj in range(p.number_of_objectives):
         alabels.append('Obj-' + str(obj))
-    plot_front = Plot(title='Pareto front approximation' + '\nSin desplazamiento de frente ' + label,
+    plot_front = Plot(title='Pareto front approximation' + ' ' + label,
                       axis_labels=alabels)
     plot_front.plot(front_, label=label + 'F0 ' + algorithm.label,
                     filename=DIRECTORY_RESULTS + 'F0_class_' + 'original_' + label + algorithm.label,
@@ -110,29 +111,20 @@ def dtlz_test(p: FloatProblemGD, label: str = '', experiment: int = 30):
         else:
             class_fronts[3].append(s)
     print(len(class_fronts[0]), len(class_fronts[1]), len(class_fronts[2]), len(class_fronts[3]))
-    front = []
-    for f in class_fronts:
-        if len(f) > 0:
-            for s in f:
-                front.append(s)
-    print(len(front))
-    _front = None
-    idx = 0
-    for i, _f in enumerate(class_fronts):
-        if len(_f) > 0:
-            _front = _f
-            idx = i
-            break
-    print(idx, len(_front))
+
+    _front = class_fronts[0] + class_fronts[1]
+    if len(_front) == 0:
+        _front = class_fronts[2] + class_fronts[3]
+    print('Class : ', len(_front))
     # Save results to file
-    print_solutions_to_file(_front, DIRECTORY_RESULTS + 'front0._class_' + label + algorithm.label)
+    print_solutions_to_file(_front, DIRECTORY_RESULTS + 'Class_F0' + label + algorithm.label)
 
     print(f'Algorithm: ${algorithm.get_name()}')
     print(f'Problem: ${p.get_name()}')
 
-    plot_front = Plot(title='Pareto front approximation\n' + label + 'F' + str(idx) + p.get_name(), axis_labels=alabels)
-    plot_front.plot(_front, label=label + 'F' + str(idx) + p.get_name(),
-                    filename=DIRECTORY_RESULTS + 'F0_class_' + label + p.get_name(),
+    plot_front = Plot(title=label + 'F_' + p.get_name(), axis_labels=alabels)
+    plot_front.plot(_front, label=label + 'F_' + p.get_name(),
+                    filename=DIRECTORY_RESULTS + 'Class_F0' + label + p.get_name(),
                     format='png')
 
 
@@ -264,28 +256,100 @@ def load_objectives_from_gdm_file(p: DTLZ1P, obj_path: str):
         print(x.objectives, x.attributes['net_score'])
 
 
+def validate_interclass(problem):
+    with open('/home/thinkpad/Documents/jemoa/experiments/dtlz_preferences/Class_F0DTLZ1_P3.out') as f:
+        content = f.readlines()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    solutions = []
+    print(problem.get_preference_model(0))
+    for idx, line in enumerate(content):
+        split = line.split('*')[1].split(',')
+        _s = problem.generate_existing_solution([float(x) for x in split],is_objectives=True)
+        _s.bag = 'java'
+        solutions.append(_s)
+    with open('/home/thinkpad/PycharmProjects/jMetalPy/results/Class_F0enfoque_frontsNSGAIII_custom.DTLZ1P_3.csv') as f:
+        content = f.readlines()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    for idx, line in enumerate(content):
+        if not 'variables' in line:
+            split = line.split('*')[1].split(',')
+            _s = problem.generate_existing_solution([float(x) for x in split], is_objectives=True)
+            _s.bag = 'python'
+            solutions.append(_s)
+    ranking = FastNonDominatedRanking()
+
+    ranking.compute_ranking(solutions)
+    front_ = ranking.get_subfront(0)
+    print('Solutions:',len(solutions))
+    print('Front 0:', len(front_))
+    class_fronts = [[], [], [], []]
+    fjava = 0
+    fpython = 0
+    for s in front_:
+        if s.bag == 'java':
+            fjava += 1
+        else:
+            fpython += 1
+        # problem.evaluate(s)
+        _class = classifier.classify(s)
+        if _class[0] > 0:
+            class_fronts[0].append(s)
+        elif _class[1] > 0:
+            class_fronts[1].append(s)
+        elif _class[2] > 0:
+            class_fronts[2].append(s)
+        else:
+            class_fronts[3].append(s)
+    print('Java solutions:', (fjava / len(front_)))
+    print('Python solutions:', (fpython / len(front_)))
+    print('HSat : ', len(class_fronts[0]), ', Sat : ', len(class_fronts[1]), ', Dis : ', len(class_fronts[2]),
+          ', HDis : ', len(class_fronts[3]))
+    _sat = class_fronts[0] + class_fronts[1]
+    fjava = 0
+    fpython = 0
+    for s in _sat:
+        if s.bag == 'java':
+            fjava += 1
+        else:
+            fpython += 1
+
+    print('Sat Java solutions:', (fjava / len(_sat)))
+    print('Sat Python solutions:', (fpython / len(_sat)))
+    plot_front = Plot(title='Sat and HSat Front')
+    plot_front.plot(_sat, label= 'Sat and HSat Front',
+                    filename=DIRECTORY_RESULTS + 'SatFront' +  problem.get_name(),
+                    format='png')
+
 if __name__ == '__main__':
     # random.seed(145600)
     random.seed(1)
 
     instance = DTLZInstance()
     path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
+    # path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
     instance.read_(path)
 
     problem = DTLZ1P(instance)
     for k, v in instance.__dict__.items():
         print(k, v)
-
+    classifier = InterClassNC(problem)
+    _best = problem.generate_existing_solution([float(x) for x in instance.attributes['best_compromise'][0]])
+    problem.evaluate(_best)
+    print(classifier.classify(_best), _best)
+    print(_best)
     k = 5
     obj = 3
+    validate_interclass(problem)
     # loadDataWithClass(problem,
     #                 '/home/thinkpad/PycharmProjects/jMetalPy/results/Solutions.bag._class_enfoque_fronts_NSGAIII_custom.DTLZ1P_10.csv',
     #                 'enfoque_fronts_')
     # load_objectives_from_gdm_file(problem,                                  '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/objetivos_nelson.csv')
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
-    # dtlz_test(problem, 'enfoque_fronts_GDM')
+    #  dtlz_test(problem, 'enfoque_fronts')
     # reference_set(problem, True)
     # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
     # print(best.objectives, best.constraints)
-    looking_for_compromise(problem)
+    # looking_for_compromise(problem)
+    # test_classifier()

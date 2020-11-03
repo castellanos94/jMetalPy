@@ -218,7 +218,7 @@ class ITHDMPreferences:
     def compare(self, x: Solution, y: Solution) -> int:
         """
             Definition 3. Relationships:xS(δ,λ)y in [-2], xP(δ,λ)y in [-1], xI(δ,λ)y in [0], xR(δ,λ)y in [1]
-            yS(δ,λ)x in 2
+
         """
         return self.compare_(x.objectives, y.objectives)
 
@@ -242,7 +242,7 @@ class ITHDMPreferences:
             return 0
         if self.sigmaXY < self.preference_model.beta and self.sigmaYX < 0:
             return 1
-        return 2
+        return 1
 
     def _credibility_index(self, x: List[Interval], y: List[Interval]) -> float:
         omegas = [0] * len(x)
