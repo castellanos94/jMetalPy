@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from custom.dtlz_problems import DTLZ1P
+from custom.dtlz_problems import DTLZ1P, DTLZ2P, DTLZ3P, DTLZ4P
 from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem, FloatProblemGD
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
@@ -287,6 +287,7 @@ def validate_interclass(problem):
     class_fronts = [[], [], [], []]
     fjava = 0
     fpython = 0
+    classifier = InterClassNC(problem)
     for s in front_:
         if s.bag == 'java':
             fjava += 1
@@ -327,29 +328,23 @@ if __name__ == '__main__':
     random.seed(1)
 
     instance = DTLZInstance()
-    path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1_Instance.txt'
+    path = '/home/thinkpad/Documents/jemoa/src/main/resources/DTLZ_INSTANCES/DTLZ4_Instance.txt'
     # path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
     instance.read_(path)
 
-    problem = DTLZ1P(instance)
-    for k, v in instance.__dict__.items():
-        print(k, v)
+    problem = DTLZ4P(instance)
+    _best = problem.generate_existing_solution(problem.instance_.attributes['best_compromise'][0],is_objectives=True)
     classifier = InterClassNC(problem)
-    _best = problem.generate_existing_solution([float(x) for x in instance.attributes['best_compromise'][0]])
-    problem.evaluate(_best)
-    print(classifier.classify(_best), _best)
-    print(_best)
-    k = 5
-    obj = 3
-    validate_interclass(problem)
+
+    print('Best compromise:', _best.objectives,classifier.classify(_best))
+    # validate_interclass(problem)
     # loadDataWithClass(problem,
     #                 '/home/thinkpad/PycharmProjects/jMetalPy/results/Solutions.bag._class_enfoque_fronts_NSGAIII_custom.DTLZ1P_10.csv',
     #                 'enfoque_fronts_')
     # load_objectives_from_gdm_file(problem,                                  '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/objetivos_nelson.csv')
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
     #  dtlz_test(problem, 'enfoque_fronts')
-    # reference_set(problem, True)
-    # best = problem.generate_existing_solution(instance.attributes['best_compromise'][0])
-    # print(best.objectives, best.constraints)
+    print(problem)
+    reference_set(problem,True)
     # looking_for_compromise(problem)
     # test_classifier()

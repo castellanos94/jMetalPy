@@ -68,6 +68,7 @@ class ITHDMDominanceComparator(DominanceComparator):
         best_is_two = 0
         value1_strictly_greater = False
         value2_strictly_greater = False
+
         for i in range(len(solution1)):
             value1 = Interval(solution1[i])
             value2 = Interval(solution2[i])
@@ -87,10 +88,30 @@ class ITHDMDominanceComparator(DominanceComparator):
                 if not value2_strictly_greater and poss > 0.5:
                     value2_strictly_greater = True
                 best_is_two += 1
+        s1_dominates_s2 = False
+        s2_dominates_s1 = False
         if value1_strictly_greater and best_is_one == len(solution1):
-            return -1
+            s1_dominates_s2 = True
         if value2_strictly_greater and best_is_two == len(solution1):
+            s2_dominates_s1 = True
+        if s2_dominates_s1 and s1_dominates_s2:
+            return 0
+        if s1_dominates_s2:
+            return -1
+        if s2_dominates_s1:
             return 1
+        if not s2_dominates_s1 and not s1_dominates_s2 and best_is_one != len(solution1) and best_is_two != len(
+                 solution1):
+             if self.objectives_type[0]: # Max
+                 if best_is_one < best_is_two:
+                     return -1
+                 if best_is_two < best_is_one:
+                     return 1
+             else:
+                 if best_is_one > best_is_two:
+                     return -1
+                 if best_is_two > best_is_one:
+                     return 1
         return 0
 
 
