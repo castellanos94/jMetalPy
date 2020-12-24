@@ -317,7 +317,7 @@ class ITHDMPreferences:
         veto = self.preference_model.veto[criteria]
         if self.objectives_type[criteria]:
             return Interval(y[criteria]).poss_greater_than_or_eq(x[criteria] + veto)
-        return Interval(y[criteria]).poss_smaller_than_or_eq(x[criteria]  veto)
+        return Interval(y[criteria]).poss_smaller_than_or_eq(x[criteria] - veto)
 
     def _alpha_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
         if self.objectives_type[criteria]:
