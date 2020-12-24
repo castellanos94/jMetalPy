@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from custom.dtlz_problems import DTLZ1P, DTLZ2P, DTLZ3P, DTLZ4P
+from custom.dtlz_problems import DTLZ1P, DTLZ2P, DTLZ3P, DTLZ4P, DTLZ5P, DTLZ6P, DTLZ7P
 from custom.gd_problems import PortfolioSocialProblem, PortfolioSocialProblemGD, GDProblem, FloatProblemGD
 from custom.instance import PspInstance, DTLZInstance, PspIntervalInstance
 from custom.interval import Interval
@@ -328,12 +328,18 @@ if __name__ == '__main__':
     random.seed(1)
 
     instance = DTLZInstance()
-    path = '/home/thinkpad/Documents/jemoa/src/main/resources/DTLZ_INSTANCES/DTLZ4_Instance.txt'
+    path = '/home/thinkpad/Documents/jemoa/src/main/resources/DTLZ_INSTANCES/DTLZ1_InstanceV2.txt'
     # path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
     instance.read_(path)
-
-    problem = DTLZ4P(instance)
-    _best = problem.generate_existing_solution(problem.instance_.attributes['best_compromise'][0],is_objectives=True)
+    isObjective = False
+    problem = DTLZ1P(instance)
+    _best = problem.generate_existing_solution(problem.instance_.attributes['best_compromise'][0], isObjective)
+    for s in  problem.instance_.initial_solutions:
+        problem.evaluate(s)
+        print(s)
+    fndr = FastNonDominatedRanking()
+    fndr.compute_ranking(problem.instance_.initial_solutions)
+    print(fndr.get_number_of_subfronts())
     classifier = InterClassNC(problem)
 
     print('Best compromise:', _best.objectives,classifier.classify(_best))
@@ -345,6 +351,6 @@ if __name__ == '__main__':
     # dm_generator(obj, 14, obj * [Interval(0, (9 / 8) * k * 100)])
     #  dtlz_test(problem, 'enfoque_fronts')
     print(problem)
-    reference_set(problem,True)
+    reference_set(problem,is_objective=isObjective)
     # looking_for_compromise(problem)
     # test_classifier()

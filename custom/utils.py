@@ -245,18 +245,14 @@ class ITHDMPreferences:
 
     def compare_(self, x: List[Interval], y: List[Interval]) -> int:
         self.coalition = [None for _ in range(len(x))]
-
-        value = self.dominance_comparator.dominance_test_(x, y)
-        if value == -1:
-            self.sigmaXY = 1
-            self.sigmaYX = 0
-            return -2
-        if value == 1:
-            self.sigmaXY = 0
-            self.sigmaYX = 1
-            return 2
         self.sigmaXY = self._credibility_index(x, y)
         self.sigmaYX = self._credibility_index(y, x)
+        value = self.dominance_comparator.dominance_test_(x, y)
+        if value == -1:
+            return -2
+        if value == 1:
+            return 2
+
         if self.sigmaXY >= self.preference_model.beta > self.sigmaYX:
             return -1
         if self.sigmaXY >= self.preference_model.beta and self.sigmaYX >= self.preference_model.beta:
@@ -321,7 +317,7 @@ class ITHDMPreferences:
         veto = self.preference_model.veto[criteria]
         if self.objectives_type[criteria]:
             return Interval(y[criteria]).poss_greater_than_or_eq(x[criteria] + veto)
-        return Interval(y[criteria]).poss_smaller_than_or_eq(x[criteria] + veto)
+        return Interval(y[criteria]).poss_smaller_than_or_eq(x[criteria]  veto)
 
     def _alpha_ij(self, x: List[Interval], y: List[Interval], criteria: int) -> float:
         if self.objectives_type[criteria]:
