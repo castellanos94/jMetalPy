@@ -206,7 +206,7 @@ class Interval:
         return Interval(0, abs(u))
 
     def __str__(self):
-        return '{:.5f} {:.5f}'.format(self.lower, self.upper)
+        return '{:.12f} {:.12f}'.format(self.lower, self.upper)
 
     def __repr__(self):
-        return '{:.5f} {:.5f}'.format(self.lower, self.upper)
+        return '{:.12f} {:.12f}'.format(self.lower, self.upper)

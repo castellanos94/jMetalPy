@@ -315,30 +315,30 @@ class ReferenceSetITHDM:
                 # Step 1:
                 for idx in range(self.problem_.number_of_objectives):
                     if self.problem_.objectives_type[idx]:
-                        r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 3.0))
+                        r2[0].append(Interval(best_compromise.objectives[idx] - dif_ideal_front[idx] / 4.0))
                     else:
-                        r2[0].append(Interval(best_compromise.objectives[idx] + dif_ideal_front[idx] / 3.0))
+                        r2[0].append(Interval(best_compromise.objectives[idx] + dif_ideal_front[idx] / 4.0))
                 print('6 // OUTRANKING: R2(3) + R1(3)')
                 print(str(r2[0]).replace('[', '').replace(']', ''))
                 while dominance.dominance_test_(best_compromise.objectives, r2[0]) != -1:
                     val = dominance.dominance_test_(best_compromise.objectives, r2[0])
                     for idx, tmp in enumerate(r2[0]):
                         if self.problem_.objectives_type[idx]:
-                            r2[0][idx] = tmp - dif_ideal_front[idx] / 3
+                            r2[0][idx] = tmp - dif_ideal_front[idx] / 4
                         else:
-                            r2[0][idx] = tmp + dif_ideal_front[idx] / 3
+                            r2[0][idx] = tmp + dif_ideal_front[idx] / 4
                 # Step 2: Creando r11 a partir de la frontera
                 for idx in range(self.problem_.number_of_objectives):
                     if self.problem_.objectives_type[idx]:
-                        r1[0].append((frontiers_objectives[dm][0][idx] - dif_ideal_front[idx] / 3))
+                        r1[0].append((frontiers_objectives[dm][0][idx] - dif_ideal_front[idx] / 4))
                     else:
-                        r1[0].append((frontiers_objectives[dm][0][idx] + dif_ideal_front[idx] / 3))
+                        r1[0].append((frontiers_objectives[dm][0][idx] + dif_ideal_front[idx] / 4))
                 while dominance.dominance_test_(r2[0], r1[0]) != -1:
                     for idx, tmp in enumerate(r1[0]):
                         if self.problem_.objectives_type[idx]:
-                            r1[0][idx] = tmp - dif_ideal_front[idx] / 6
+                            r1[0][idx] = tmp - dif_ideal_front[idx] / 4
                         else:
-                            r1[0][idx] = tmp + dif_ideal_front[idx] / 6
+                            r1[0][idx] = tmp + dif_ideal_front[idx] / 4
                 # Step 3:  disminuir
                 dif_r2_r1 = [abs((r2[0][idx] - r1[0][idx]).midpoint()) for idx in
                              range(self.problem_.number_of_objectives)]

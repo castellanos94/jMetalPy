@@ -328,13 +328,13 @@ if __name__ == '__main__':
     random.seed(1)
 
     instance = DTLZInstance()
-    path = '/home/thinkpad/Documents/jemoa/src/main/resources/DTLZ_INSTANCES/DTLZ1_InstanceV2.txt'
+    path = '/home/thinkpad/Documents/jemoa/src/main/resources/DTLZ_INSTANCES/DTLZ7_Instance.txt'
     # path = '/home/thinkpad/PycharmProjects/jMetalPy/resources/DTLZ_INSTANCES/DTLZ1P_10.txt'
     instance.read_(path)
     isObjective = False
-    problem = DTLZ1P(instance)
+    problem = DTLZ7P(instance)
     _best = problem.generate_existing_solution(problem.instance_.attributes['best_compromise'][0], isObjective)
-    for s in  problem.instance_.initial_solutions:
+    for s in problem.instance_.initial_solutions:
         problem.evaluate(s)
         print(s)
     fndr = FastNonDominatedRanking()
